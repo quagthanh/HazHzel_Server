@@ -3,7 +3,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './schemas/user.schema';
 import { InjectModel } from '@nestjs/mongoose';
-import mongoose, { isValidObjectId, Model } from 'mongoose';
+import mongoose, { isValidObjectId, Model, Query } from 'mongoose';
 import { hashPassword } from '@/helpers/utils';
 import aqp from 'api-query-params';
 import { v4 as uuidv4 } from 'uuid';
@@ -228,6 +228,7 @@ export class UsersService {
       throw new BadRequestException('Internal server error');
     }
   }
+ 
 }
 import { CreateAuthDto } from '@/auth/dto/create-auth.dto';
 import {

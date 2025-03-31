@@ -7,21 +7,32 @@ import {
   Param,
   Delete,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Public } from '@/decorator/customize';
+import { LocalAuthGuard } from '@/auth/passport/local-auth.guard';
+import { RolesGuard } from '@/auth/passport/roles.guard';
+import { Roles } from '@/decorator/role.decorator';
+import { Role } from '@/enum/role.enum';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
+  @Get('search')
+   search(){
+    return `search ne`
+  }
   @Public()
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
-  @Public()
+
   @Get()
   async findAll(
     @Query() query: string,
@@ -32,17 +43,21 @@ export class UsersController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string) {
     return this.usersService.findByEmail(id);
   }
 
   @Patch()
-  update(@Body() updateUserDto: UpdateUserDto) {
+  async update(@Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(updateUserDto);
   }
-  @Public()
   @Delete(':id')
-  remove(@Param('id') _id: string) {
+  async remove(@Param('id') _id: string) {
     return this.usersService.remove(_id);
   }
+
+
+
+
+  
 }
