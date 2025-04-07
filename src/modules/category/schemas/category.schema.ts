@@ -1,0 +1,30 @@
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { HydratedDocument, Types } from 'mongoose';
+
+export type CategoryDocument = HydratedDocument<Category>;
+
+@Schema({ timestamps: true })
+export class Category {
+  @Prop({ type: Types.ObjectId, required: true })
+  _id: Types.ObjectId;
+
+  @Prop({ type: String, required: true })
+  name: string;
+
+  @Prop({ type: Types.ObjectId, ref: 'Category' })
+  parentId: Types.ObjectId;
+
+  @Prop({ type: String })
+  image: string;
+
+  @Prop({ type: Boolean, default: true })
+  isActive: boolean;
+
+  @Prop({ type: Date })
+  createdAt: Date;
+
+  @Prop({ type: Date })
+  updatedAt: Date;
+}
+
+export const CategorySchema = SchemaFactory.createForClass(Category);

@@ -21,12 +21,12 @@ import { Role } from '@/enum/role.enum';
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
-  @UseGuards(RolesGuard)
-  @Roles(Role.ADMIN)
-  @Get('search')
-   search(){
-    return `search ne`
-  }
+  // @UseGuards(RolesGuard)
+  // @Roles(Role.ADMIN)
+  // @Get('search')
+  //  search(){
+  //   return `search ne`
+  // }
   @Public()
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
@@ -55,9 +55,4 @@ export class UsersController {
   async remove(@Param('id') _id: string) {
     return this.usersService.remove(_id);
   }
-
-
-
-
-  
 }
