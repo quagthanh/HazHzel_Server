@@ -1,8 +1,7 @@
-import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { AppController } from '@/app.controller';
 import { AppService } from '@/app.service';
 import { UsersModule } from '@/modules/users/users.module';
-import { LikesModule } from '@/modules/likes/likes.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AuthModule } from './auth/auth.module';
@@ -15,7 +14,6 @@ import { TransformInterceptor } from './core/transform.interceptor';
 @Module({
   imports: [
     UsersModule,
-    LikesModule,
     ConfigModule.forRoot({ isGlobal: true }),
     AuthModule,
     MongooseModule.forRootAsync({

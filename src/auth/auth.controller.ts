@@ -7,9 +7,7 @@ import {
   Body,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { AuthGuard } from '@nestjs/passport';
 import { LocalAuthGuard } from './passport/local-auth.guard';
-import { JwtAuthGuard } from './passport/jwt-auth.guard';
 import { Public, ResponseMessage } from '@/decorator/customize';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { MailerService } from '@nestjs-modules/mailer';
@@ -57,19 +55,5 @@ export class AuthController {
   @Post('change-password')
   changePassword(@Body() changePasswordDto: ChangePasswordDto) {
     return this.authService.changePassword(changePasswordDto);
-  }
-  @Public()
-  @Get('mail')
-  testMail() {
-    this.mailerService.sendMail({
-      to: 'test.quangthanh@gmail.com', // list of receivers
-      subject: 'Testing Nest MailerModule ✔', // Subject line
-      template: './register',
-      context: {
-        name: 'QthanhQthanh',
-        activationCode: 123131231,
-      },
-    });
-    return 'okkk';
   }
 }

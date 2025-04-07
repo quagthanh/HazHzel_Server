@@ -1,16 +1,14 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { UsersService } from '@/modules/users/users.service';
 import { comparePassword } from '@/helpers/utils';
 import { JwtService } from '@nestjs/jwt';
 import { CreateAuthDto } from './dto/create-auth.dto';
-import { register } from 'node:module';
 import {
   ChangePasswordDto,
   CodeAuthDto,
   RetryCodeDto,
   RetryPasswordDto,
 } from './dto/checkcode-auth.dto';
-import { Role } from '@/enum/role.enum';
 @Injectable()
 export class AuthService {
   constructor(
@@ -31,13 +29,13 @@ export class AuthService {
     return user;
   }
   async login(user: any) {
-    const payload = { username: user.email, sub: user._id ,role:user.role};
+    const payload = { username: user.email, sub: user._id, role: user.role };
     return {
       user: {
         _id: user.id,
         name: user.name,
         email: user.email,
-        role:user.role,
+        role: user.role,
       },
       access_token: this.jwtService.sign(payload),
     };
