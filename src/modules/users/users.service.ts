@@ -3,7 +3,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './schemas/user.schema';
 import { InjectModel } from '@nestjs/mongoose';
-import mongoose, { isValidObjectId, Model, Query } from 'mongoose';
+import mongoose, { Model } from 'mongoose';
 import { hashPassword } from '@/helpers/utils';
 import aqp from 'api-query-params';
 import { v4 as uuidv4 } from 'uuid';
@@ -86,7 +86,7 @@ export class UsersService {
     if (mongoose.isValidObjectId(_id)) {
       return this.userModel.deleteOne({ _id });
     } else {
-      throw new BadRequestException('Lỗi xảy ra ');
+      throw new BadRequestException('Lỗi xảy ra khi xóa ');
     }
   }
   async handleRegister(registerDto: CreateAuthDto) {
@@ -109,7 +109,7 @@ export class UsersService {
     //send email
     await this.mailerService.sendMail({
       to: user.email,
-      subject: 'Activate your account',
+      subject: 'Kích hoạt tài khoản của bạn ',
       template: './register',
       context: {
         name: user?.name ?? user.email,
@@ -157,7 +157,7 @@ export class UsersService {
       );
       await this.mailerService.sendMail({
         to: user.email,
-        subject: 'Reactive your account',
+        subject: 'Kích hoạt lại tài khoản của bạn',
         template: './reactive',
         context: {
           name: user?.name ?? user.email,
@@ -189,7 +189,7 @@ export class UsersService {
       );
       await this.mailerService.sendMail({
         to: user.email,
-        subject: 'Change your password',
+        subject: 'Thay đổi mật khẩu AccoutFreak',
         template: './register',
         context: {
           name: user?.name ?? user.email,
@@ -205,9 +205,7 @@ export class UsersService {
     const { email, code, password, confirmPassword } = changePasswordDto;
     try {
       if (password !== confirmPassword) {
-        throw new BadRequestException(
-          'Password và Re-Password không chính xác',
-        );
+        throw new BadRequestException('Mật khẩu nhập lại không trùng khớp');
       }
       const user = await this.userModel.findOne({ email });
       if (!user) {
@@ -228,7 +226,6 @@ export class UsersService {
       throw new BadRequestException('Internal server error');
     }
   }
- 
 }
 import { CreateAuthDto } from '@/auth/dto/create-auth.dto';
 import {
