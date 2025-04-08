@@ -21,18 +21,19 @@ import { Role } from '@/enum/role.enum';
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
-  // @UseGuards(RolesGuard)
-  // @Roles(Role.ADMIN)
-  // @Get('search')
-  //  search(){
-  //   return `search ne`
-  // }
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
+  @Get('search')
+  search() {
+    return `search ne`;
+  }
   @Public()
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
-
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN, Role.CUSTOMER, Role.STOREOWNER)
   @Get()
   async findAll(
     @Query() query: string,

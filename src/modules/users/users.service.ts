@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './schemas/user.schema';
@@ -74,7 +78,15 @@ export class UsersService {
     return this.userModel.findOne({ _id });
   }
   async findByEmail(email: string) {
-    return await this.userModel.findOne({ email });
+    try {
+      const user = await this.userModel.findOne({ email });
+      if (!user) {
+        throw new NotFoundException('Email không tồn tại');
+      }
+      return user;
+    } catch {
+      throw new BadRequestException('Lỗi khi fetch thông tin user bằng email');
+    }
   }
   async update(updateUserDto: UpdateUserDto) {
     const { _id, ...remain } = updateUserDto;
@@ -117,6 +129,68 @@ export class UsersService {
       },
     });
     return { _id: user._id };
+  }
+  async handleRegisterAdmin(registerAdminDto: CreateAdminAuthDto) {
+    //check email
+    const { name, email, password, role } = registerAdminDto;
+    const isExist = await this.isEmailExist(email);
+    if (isExist === true) {
+      throw new BadRequestException('Email đã tồn tại');
+    }
+    //hash password
+    const hashPasswordForRegister = await hashPassword(password);
+    const codeId = uuidv4();
+    const user = await this.userModel.create({
+      name,
+      email,
+      password: hashPasswordForRegister,
+      codeId: codeId,
+      role: role,
+      codeExpired: dayjs().add(3, 'minutes'),
+    });
+    //send email
+    await this.mailerService.sendMail({
+      to: user.email,
+      subject: 'Kích hoạt tài khoản của bạn ',
+      template: './register',
+      context: {
+        name: user?.name ?? user.email,
+        activationCode: codeId,
+      },
+    });
+    return { _id: user._id, role: user.role };
+  }
+  async handleRegisterStoreOwner(
+    registerStoreOwnerDto: CreateStoreOwnerAuthDto,
+  ) {
+    //check email
+    const { name, email, password, role } = registerStoreOwnerDto;
+    const isExist = await this.isEmailExist(email);
+    if (isExist === true) {
+      throw new BadRequestException('Email đã tồn tại');
+    }
+    //hash password
+    const hashPasswordForRegister = await hashPassword(password);
+    const codeId = uuidv4();
+    const user = await this.userModel.create({
+      name,
+      email,
+      password: hashPasswordForRegister,
+      codeId: codeId,
+      role: role,
+      codeExpired: dayjs().add(3, 'minutes'),
+    });
+    //send email
+    await this.mailerService.sendMail({
+      to: user.email,
+      subject: 'Kích hoạt tài khoản của bạn ',
+      template: './register',
+      context: {
+        name: user?.name ?? user.email,
+        activationCode: codeId,
+      },
+    });
+    return { _id: user._id, role: user.role };
   }
   async handleActive(codeDto: CodeAuthDto) {
     const { _id, code } = codeDto;
@@ -202,7 +276,7 @@ export class UsersService {
     }
   }
   async changePassword(changePasswordDto: ChangePasswordDto) {
-    const { email, code, password, confirmPassword } = changePasswordDto;
+    const { email, password, confirmPassword } = changePasswordDto;
     try {
       if (password !== confirmPassword) {
         throw new BadRequestException('Mật khẩu nhập lại không trùng khớp');
@@ -227,10 +301,17 @@ export class UsersService {
     }
   }
 }
-import { CreateAuthDto } from '@/auth/dto/create-auth.dto';
+import {
+  CreateAdminAuthDto,
+  CreateAuthDto,
+  CreateStoreOwnerAuthDto,
+} from '@/auth/dto/create-auth.dto';
 import {
   ChangePasswordDto,
   CodeAuthDto,
   RetryCodeDto,
   RetryPasswordDto,
 } from '@/auth/dto/checkcode-auth.dto';
+import { error } from 'console';
+import { NotFoundError } from 'rxjs';
+import { Role } from '@/enum/role.enum';

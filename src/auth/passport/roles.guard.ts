@@ -1,6 +1,11 @@
 import { ROLES_KEY } from '@/decorator/role.decorator';
 import { Role } from '@/enum/role.enum';
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
 @Injectable()
@@ -12,11 +17,10 @@ export class RolesGuard implements CanActivate {
       context.getHandler(),
       context.getClass(),
     ]);
-    
+
     if (!requiredRoles) {
       return true;
     }
-
     const { user } = context.switchToHttp().getRequest();
     if (!user?.role) {
       throw new ForbiddenException({
@@ -25,7 +29,7 @@ export class RolesGuard implements CanActivate {
         statusCode: 403,
       });
     }
-    const hasPermission = requiredRoles.some(role => user.role === role);
+    const hasPermission = requiredRoles.some((role) => user.role === role);
     if (!hasPermission) {
       throw new ForbiddenException({
         message: `Truy cập bị từ chối: Yêu cầu role ${requiredRoles.join(', ')}`,

@@ -24,7 +24,7 @@ export class User {
   @Prop()
   image: string;
 
-  @Prop({ type: String, enum: Role, default: Role.USER })
+  @Prop({ type: String, enum: Role, default: Role.CUSTOMER })
   role: Role;
 
   @Prop({ default: 'LOCAL' })
