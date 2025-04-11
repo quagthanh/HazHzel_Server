@@ -12,11 +12,11 @@ import {
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { Public } from '@/decorator/customize';
-import { LocalAuthGuard } from '@/auth/passport/local-auth.guard';
-import { RolesGuard } from '@/auth/passport/roles.guard';
-import { Roles } from '@/decorator/role.decorator';
-import { Role } from '@/enum/role.enum';
+import { Public } from '@/shared/decorators/customize';
+import { LocalAuthGuard } from '@/auth/strategies/local/local-auth.guard';
+import { RolesGuard } from '@/auth/guards/roles.guard';
+import { Roles } from '@/shared/decorators/role.decorator';
+import { Role } from '@/shared/enums/role.enum';
 
 @Controller('users')
 export class UsersController {
@@ -33,7 +33,6 @@ export class UsersController {
     return this.usersService.create(createUserDto);
   }
   @UseGuards(RolesGuard)
-  @Roles(Role.ADMIN, Role.CUSTOMER, Role.STOREOWNER)
   @Get()
   async findAll(
     @Query() query: string,

@@ -1,4 +1,4 @@
-import { TypeAddress } from '@/enum/typeAddressUser.enum';
+import { TypeAddress } from '@/shared/enums/typeAddressUser.enum';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 

@@ -1,4 +1,3 @@
-import { Variant } from '@/modules/variant/schemas/variant.schema';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 
@@ -6,9 +5,6 @@ export type PaymentDocument = HydratedDocument<Payment>;
 
 @Schema({ timestamps: true })
 export class Payment {
-  @Prop({ type: Types.ObjectId, required: true })
-  _id: Types.ObjectId;
-
   @Prop({ type: Types.ObjectId, ref: 'Order', required: true })
   orderId: Types.ObjectId;
 

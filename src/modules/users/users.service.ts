@@ -8,7 +8,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './schemas/user.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { Model } from 'mongoose';
-import { hashPassword } from '@/helpers/utils';
+import { hashPassword } from '@/shared/helpers/utils';
 import aqp from 'api-query-params';
 import { v4 as uuidv4 } from 'uuid';
 import * as dayjs from 'dayjs';
@@ -314,4 +314,4 @@ import {
 } from '@/auth/dto/checkcode-auth.dto';
 import { error } from 'console';
 import { NotFoundError } from 'rxjs';
-import { Role } from '@/enum/role.enum';
+import { Role } from '@/shared/enums/role.enum';

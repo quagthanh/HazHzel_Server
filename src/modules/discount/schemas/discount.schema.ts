@@ -1,14 +1,11 @@
-import { Variant } from '@/modules/variant/schemas/variant.schema';
+import { statusDiscount } from '@/shared/enums/statusDiscount.enum';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { HydratedDocument } from 'mongoose';
 
 export type DiscountDocument = HydratedDocument<Discount>;
 
 @Schema({ timestamps: true })
 export class Discount {
-  @Prop({ type: Types.ObjectId, required: true })
-  _id: Types.ObjectId;
-
   @Prop({ type: String, required: true })
   code: string;
 
@@ -38,8 +35,8 @@ export class Discount {
 
   @Prop({
     type: String,
-    enum: ['active', 'inactive', 'expired'],
-    default: 'active',
+    enum: statusDiscount,
+    default: statusDiscount.ACTIVE,
   })
   status: string;
 }

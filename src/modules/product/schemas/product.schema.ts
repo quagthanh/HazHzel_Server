@@ -1,4 +1,5 @@
 import { Variant } from '@/modules/variant/schemas/variant.schema';
+import { statusProduct } from '@/shared/enums/statusProduct.enum';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 
@@ -32,8 +33,8 @@ export class Product {
 
   @Prop({
     type: String,
-    enum: ['active', 'inactive', 'out_of_stock'],
-    default: 'active',
+    enum: statusProduct,
+    default: statusProduct.ACTIVE,
   })
   status: string;
 

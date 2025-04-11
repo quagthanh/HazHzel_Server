@@ -6,9 +6,6 @@ export type CartDocument = HydratedDocument<Cart>;
 
 @Schema({ timestamps: true })
 export class Cart {
-  @Prop({ type: Types.ObjectId, required: true })
-  _id: Types.ObjectId;
-
   @Prop({ type: Types.ObjectId, required: true, ref: 'User' })
   userId: Types.ObjectId;
 

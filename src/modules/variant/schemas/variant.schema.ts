@@ -5,9 +5,6 @@ export type VariantDocument = HydratedDocument<Variant>;
 
 @Schema({ timestamps: true })
 export class Variant {
-  @Prop({ type: Types.ObjectId, required: true })
-  _id: Types.ObjectId;
-
   @Prop({ type: String, required: true })
   name: string;
 
