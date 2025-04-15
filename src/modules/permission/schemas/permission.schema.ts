@@ -6,10 +6,10 @@ export type PermissionDocument = HydratedDocument<Permission>;
 @Schema({ timestamps: true })
 export class Permission {
   @Prop({ required: true })
-  name: string;
+  resource: string;
 
   @Prop({ type: String })
-  description: string;
+  action: string;
 }
 
 export const PermissionSchema = SchemaFactory.createForClass(Permission);

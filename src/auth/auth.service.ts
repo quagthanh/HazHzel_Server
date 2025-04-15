@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { UsersService } from '@/modules/users/users.service';
-import { comparePassword } from '@/helpers/utils';
+import { comparePassword } from '@/shared/helpers/utils';
 import { JwtService } from '@nestjs/jwt';
 import {
   CreateAdminAuthDto,

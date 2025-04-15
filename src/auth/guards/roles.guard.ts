@@ -1,5 +1,5 @@
-import { ROLES_KEY } from '@/decorator/role.decorator';
-import { Role } from '@/enum/role.enum';
+import { ROLES_KEY } from '@/shared/decorators/role.decorator';
+import { Role } from '@/shared/enums/role.enum';
 import {
   Injectable,
   CanActivate,

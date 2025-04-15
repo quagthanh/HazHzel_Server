@@ -1,4 +1,4 @@
-import { Role, RoleStore } from '@/enum/role.enum';
+import { Role } from '@/shared/enums/role.enum';
 import { IsEnum, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class CreateAuthDto {
@@ -27,6 +27,5 @@ export class CreateStoreOwnerAuthDto {
   @IsNotEmpty()
   name: string;
   @IsNotEmpty({ message: 'Hãy chọn role User hoặc StoreOwner' })
-  @IsEnum(RoleStore)
-  role: RoleStore;
+  role: string;
 }

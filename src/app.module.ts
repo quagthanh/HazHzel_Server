@@ -4,12 +4,13 @@ import { AppService } from '@/app.service';
 import { UsersModule } from '@/modules/users/users.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
-import { AuthModule } from './auth/auth.module';
+import { AuthModule } from '@/auth/auth.module';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
-import { JwtAuthGuard } from './auth/passport/jwt-auth.guard';
+import { JwtAuthGuard } from '@/auth/strategies/jwt/jwt-auth.guard';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
-import { TransformInterceptor } from './core/transform.interceptor';
+import { TransformInterceptor } from '@/shared/interceptors/transform.interceptor';
+import { PermissionModule } from './modules/permission/permission.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { TransformInterceptor } from './core/transform.interceptor';
       }),
       inject: [ConfigService],
     }),
+    PermissionModule,
   ],
   controllers: [AppController],
   providers: [
