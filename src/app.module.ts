@@ -11,6 +11,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
 import { TransformInterceptor } from '@/shared/interceptors/transform.interceptor';
 import { PermissionModule } from './modules/permission/permission.module';
+import { RoleModule } from './modules/role/role.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { PermissionModule } from './modules/permission/permission.module';
       inject: [ConfigService],
     }),
     PermissionModule,
+    RoleModule,
   ],
   controllers: [AppController],
   providers: [

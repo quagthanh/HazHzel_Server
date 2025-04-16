@@ -1,3 +1,4 @@
+import { RoleEnum } from '@/shared/enums/role.enum';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 
@@ -5,10 +6,10 @@ export type RoleDocument = HydratedDocument<Role>;
 
 @Schema({ timestamps: true })
 export class Role {
-  @Prop({ type: String })
-  roleName: string;
+  @Prop({ type: String, enum: RoleEnum, require: true, unique: true })
+  name: string;
 
-  @Prop({ type: Types.ObjectId, ref: 'Permission' })
-  permissionsId: Types.ObjectId;
+  @Prop({ type: String, ref: 'Permission' })
+  permissionsId: string;
 }
 export const RoleSchema = SchemaFactory.createForClass(Role);

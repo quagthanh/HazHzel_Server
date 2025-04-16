@@ -1,4 +1,4 @@
-import { Role } from '@/shared/enums/role.enum';
+import { RoleEnum } from '@/shared/enums/role.enum';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 
@@ -24,8 +24,8 @@ export class User {
   @Prop()
   image: string;
 
-  @Prop({ type: String, enum: Role, default: Role.CUSTOMER })
-  role: Role;
+  @Prop({ type: String, enum: RoleEnum, default: RoleEnum.CUSTOMER })
+  role: RoleEnum;
 
   @Prop({ default: 'LOCAL' })
   accountType: string;

@@ -13,6 +13,17 @@ import aqp from 'api-query-params';
 import { v4 as uuidv4 } from 'uuid';
 import * as dayjs from 'dayjs';
 import { MailerService } from '@nestjs-modules/mailer';
+import {
+  CreateAdminAuthDto,
+  CreateAuthDto,
+  CreateStoreOwnerAuthDto,
+} from '@/auth/dto/create-auth.dto';
+import {
+  ChangePasswordDto,
+  CodeAuthDto,
+  RetryCodeDto,
+  RetryPasswordDto,
+} from '@/auth/dto/checkcode-auth.dto';
 
 @Injectable()
 export class UsersService {
@@ -301,17 +312,3 @@ export class UsersService {
     }
   }
 }
-import {
-  CreateAdminAuthDto,
-  CreateAuthDto,
-  CreateStoreOwnerAuthDto,
-} from '@/auth/dto/create-auth.dto';
-import {
-  ChangePasswordDto,
-  CodeAuthDto,
-  RetryCodeDto,
-  RetryPasswordDto,
-} from '@/auth/dto/checkcode-auth.dto';
-import { error } from 'console';
-import { NotFoundError } from 'rxjs';
-import { Role } from '@/shared/enums/role.enum';

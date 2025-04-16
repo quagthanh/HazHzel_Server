@@ -1,5 +1,5 @@
 import { ROLES_KEY } from '@/shared/decorators/role.decorator';
-import { Role } from '@/shared/enums/role.enum';
+import { RoleEnum } from '@/shared/enums/role.enum';
 import {
   Injectable,
   CanActivate,
@@ -13,10 +13,10 @@ export class RolesGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const requiredRoles = this.reflector.getAllAndOverride<Role[]>(ROLES_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const requiredRoles = this.reflector.getAllAndOverride<RoleEnum[]>(
+      ROLES_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
     if (!requiredRoles) {
       return true;

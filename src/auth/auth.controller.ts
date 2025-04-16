@@ -14,7 +14,7 @@ import {
   RetryPasswordDto,
 } from '@/auth/dto/checkcode-auth.dto';
 import { RolesGuard } from './guards/roles.guard';
-import { Role } from '@/shared/enums/role.enum';
+import { RoleEnum } from '@/shared/enums/role.enum';
 import { Roles } from '@/shared/decorators/role.decorator';
 
 @Controller('auth')
@@ -33,13 +33,13 @@ export class AuthController {
     return this.authService.handleRegister(registerDto);
   }
   @UseGuards(RolesGuard)
-  @Roles(Role.ADMIN)
+  @Roles(RoleEnum.ADMIN)
   @Post('register-storeowner')
   registerStoreOwner(@Body() registerStoreOwnerDto: CreateStoreOwnerAuthDto) {
     return this.authService.handleRegisterStoreOwner(registerStoreOwnerDto);
   }
   @UseGuards(RolesGuard)
-  @Roles(Role.ADMIN)
+  @Roles(RoleEnum.ADMIN)
   @Post('register-admin')
   registerAdmin(@Body() registerAdminDto: CreateAdminAuthDto) {
     return this.authService.handleRegisterAdmin(registerAdminDto);
