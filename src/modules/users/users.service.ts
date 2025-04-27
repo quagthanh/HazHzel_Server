@@ -56,23 +56,28 @@ export class UsersService {
   }
 
   async findAll(query: string, current: number, pageSize: number) {
-    const { filter, sort } = aqp(query);
+    const { filter, sort, projection } = aqp(query);
+
     if (!current) current = 1;
     if (!pageSize) pageSize = 5;
 
     if (filter.current) delete filter.current;
     if (filter.pageSize) delete filter.pageSize;
 
-    const totalItems = (await this.userModel.find(filter)).length;
+    const totalItems = await this.userModel.countDocuments(filter);
     const totalPages = Math.ceil(totalItems / pageSize);
 
     const skip = (current - 1) * pageSize;
+
+    const baseProjection = { password: 0 };
+    const finalProjection = projection
+      ? { ...projection, baseProjection }
+      : baseProjection;
 
     const result = await this.userModel
       .find(filter)
       .skip(skip)
       .limit(pageSize)
-      .select('-password')
       .sort(sort as any);
     return {
       meta: {
@@ -310,5 +315,8 @@ export class UsersService {
     } catch {
       throw new BadRequestException('Internal server error');
     }
+  }
+  async deleteAll() {
+    return this.userModel.deleteMany();
   }
 }

@@ -9,7 +9,7 @@ export class Role {
   @Prop({ type: String, enum: RoleEnum, require: true, unique: true })
   name: string;
 
-  @Prop({ type: String, ref: 'Permission' })
-  permissionsId: string;
+  @Prop({ type: [Types.ObjectId], ref: 'Permission' })
+  permissionsId: Types.ObjectId;
 }
 export const RoleSchema = SchemaFactory.createForClass(Role);

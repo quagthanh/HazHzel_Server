@@ -26,8 +26,7 @@ export class UsersController {
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
-  @UseGuards(RolesGuard)
-  @Roles(RoleEnum.ADMIN, RoleEnum.SYSTEM_ADMIN)
+
   @Get()
   async findAll(
     @Query() query: string,
@@ -49,5 +48,11 @@ export class UsersController {
   @Delete(':id')
   async remove(@Param('id') _id: string) {
     return this.usersService.remove(_id);
+  }
+
+  //Just for develop progress
+  @Delete()
+  async deleteAll() {
+    return this.usersService.deleteAll();
   }
 }

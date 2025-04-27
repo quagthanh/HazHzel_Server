@@ -12,12 +12,11 @@ import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handleba
 import { TransformInterceptor } from '@/shared/interceptors/transform.interceptor';
 import { PermissionModule } from './modules/permission/permission.module';
 import { RoleModule } from './modules/role/role.module';
+import { ProductModule } from './modules/product/product.module';
 
 @Module({
   imports: [
-    UsersModule,
     ConfigModule.forRoot({ isGlobal: true }),
-    AuthModule,
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -52,8 +51,11 @@ import { RoleModule } from './modules/role/role.module';
       }),
       inject: [ConfigService],
     }),
+    AuthModule,
+    UsersModule,
     PermissionModule,
     RoleModule,
+    ProductModule,
   ],
   controllers: [AppController],
   providers: [

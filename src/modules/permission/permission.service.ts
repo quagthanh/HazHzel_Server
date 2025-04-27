@@ -2,7 +2,9 @@ import { CreatePermissionDto } from './dto/create-permission.dto';
 import { UpdatePermissionDto } from './dto/update-permission.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Permission } from './schemas/permission.schema';
-import { Model } from 'mongoose';
+import mongoose, { Model, Mongoose } from 'mongoose';
+import aqp from 'api-query-params';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 
 export class PermissionService {
   constructor(
@@ -21,19 +23,50 @@ export class PermissionService {
     return data;
   }
 
-  findAll() {
-    return `This action returns all permission`;
+  async findAll(query: string, current: number, pageSize: number) {
+    const { filter, sort, projection } = aqp(query);
+
+    if (!current) current = 1;
+    if (!pageSize) pageSize = 5;
+
+    if (filter.current) delete filter.current;
+    if (filter.pageSize) delete filter.pageSize;
+
+    const totalItems = await this.permissionModel.countDocuments(filter);
+    const totalPages = Math.ceil(totalItems / pageSize);
+
+    const skip = (current - 1) * pageSize;
+
+    const result = await this.permissionModel
+      .find(filter)
+      .skip(skip)
+      .limit(pageSize)
+      .select(projection)
+      .sort(sort as any);
+    return {
+      meta: {
+        current: current,
+        pageSize: pageSize,
+        pages: totalPages,
+        total: totalItems,
+      },
+      result,
+    };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} permission`;
+  findOne(_id: string) {
+    return this.permissionModel.findById({ _id });
   }
 
   update(id: number, updatePermissionDto: UpdatePermissionDto) {
     return `This action updates a #${id} permission`;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} permission`;
+  async remove(_id: string) {
+    if (mongoose.isValidObjectId(_id)) {
+      return this.permissionModel.deleteOne({ _id });
+    } else {
+      throw new BadRequestException('Lỗi xảy ra khi xóa ');
+    }
   }
 }

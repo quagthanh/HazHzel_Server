@@ -1,3 +1,4 @@
+import { Resources } from '@/shared/enums/resources.enum';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 @Schema({ _id: false })
@@ -15,7 +16,7 @@ export type PermissionDocument = HydratedDocument<Permission>;
 
 @Schema({ timestamps: true })
 export class Permission {
-  @Prop({ required: true, unique: true })
+  @Prop({ required: true, unique: true, enum: Resources })
   resource: string;
 
   @Prop({ type: ActionPer, default: () => new ActionPer() })
