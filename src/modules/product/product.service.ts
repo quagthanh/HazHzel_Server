@@ -7,13 +7,17 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Product } from './schemas/product.schema';
-import mongoose, { Model } from 'mongoose';
+import mongoose, { Model, Mongoose } from 'mongoose';
 import aqp from 'api-query-params';
+import { Supplier } from '../supplier/schemas/supplier.schema';
+import { isValidId } from '@/shared/helpers/utils';
 
+@Injectable()
 export class ProductService {
   constructor(
     @InjectModel(Product.name) private readonly productModel: Model<Product>,
   ) {}
+
   async create(createProductDto: CreateProductDto) {
     const { categoryId, supplierId, ...ortherFields } = createProductDto;
     const data = await this.productModel.create({
@@ -55,10 +59,12 @@ export class ProductService {
     };
   }
   async findOne(_id: string) {
-    if (!mongoose.isValidObjectId(_id)) {
+    if (!isValidId(_id)) {
       throw new BadRequestException('Id product không hợp lệ ');
     }
-    const data = await this.productModel.findById(_id);
+    const data = await this.productModel
+      .findById(_id)
+      .populate(['supplierId', { path: 'categoryId' }]);
     if (!data) {
       throw new NotFoundException('Không tìm thấy sản phẩm');
     }

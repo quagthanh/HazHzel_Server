@@ -7,9 +7,6 @@ export type SupplierDocument = HydratedDocument<Supplier>;
 
 @Schema({ timestamps: true })
 export class Supplier {
-  @Prop({ type: Types.ObjectId, required: true })
-  _id: Types.ObjectId;
-
   @Prop({ type: String, required: true })
   name: string;
 

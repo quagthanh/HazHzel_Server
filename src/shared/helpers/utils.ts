@@ -1,4 +1,5 @@
 import * as bcrypt from 'bcrypt';
+import mongoose from 'mongoose';
 
 const saltOrRounds = 10;
 
@@ -15,3 +16,5 @@ export const comparePassword = async (
     return await bcrypt.compare(plainPassword, hashPassword);
   } catch (error) {}
 };
+
+export const isValidId = (id: string): boolean => mongoose.isValidObjectId(id);
