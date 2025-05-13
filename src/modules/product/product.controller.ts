@@ -11,7 +11,6 @@ import {
 import { ProductService } from './product.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
-import { Public } from '@/shared/decorators/customize';
 
 @Controller('product')
 export class ProductController {
@@ -37,12 +36,12 @@ export class ProductController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
-    return this.productService.update(+id, updateProductDto);
+  update(@Param('id') _id: string, @Body() updateProductDto: UpdateProductDto) {
+    return this.productService.update(_id, updateProductDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.productService.remove(+id);
+  remove(@Param('id') _id: string) {
+    return this.productService.remove(_id);
   }
 }

@@ -50,7 +50,6 @@ export class UsersController {
     return this.usersService.remove(_id);
   }
 
-  //Just for develop progress
   @Delete()
   async deleteAll() {
     return this.usersService.deleteAll();

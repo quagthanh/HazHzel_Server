@@ -72,11 +72,15 @@ export class ProductService {
     return data;
   }
 
-  update(id: number, updateProductDto: UpdateProductDto) {
-    return `This action updates a #${id} product`;
+  async update(_id: string, updateProductDto: UpdateProductDto) {
+    const result = await this.productModel.updateOne(
+      { _id },
+      { ...updateProductDto },
+    );
+    return result;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} product`;
+  async remove(_id: string) {
+    return await this.productModel.deleteOne({ _id });
   }
 }
