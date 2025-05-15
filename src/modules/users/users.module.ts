@@ -13,4 +13,3 @@ import { User, UserSchema } from './schemas/user.schema';
   exports: [UsersService],
 })
 export class UsersModule {}
-console.log('User name ne:->>>', User);

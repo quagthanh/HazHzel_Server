@@ -47,7 +47,8 @@ export class ProductService {
       .skip(skip)
       .limit(pageSize)
       .select(projection)
-      .sort(sort as any);
+      .sort(sort as any)
+      .populate(['supplierId', { path: 'categoryId' }]);
     return {
       meta: {
         current: current,
@@ -69,6 +70,16 @@ export class ProductService {
       throw new NotFoundException('Không tìm thấy sản phẩm');
     }
 
+    return data;
+  }
+  async findByShopId(_id: string) {
+    if (!isValidId(_id)) {
+      throw new BadRequestException('Id shop để get product không hợp lệ ');
+    }
+    const data = await this.productModel.find({ supplierId: _id });
+    if (!data) {
+      throw new BadRequestException('Lỗi khi lấy dữ liệu product theo shops');
+    }
     return data;
   }
 

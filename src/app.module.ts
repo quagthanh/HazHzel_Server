@@ -15,6 +15,8 @@ import { RoleModule } from './modules/role/role.module';
 import { ProductModule } from './modules/product/product.module';
 import { SupplierModule } from './modules/supplier/supplier.module';
 import { CategoryModule } from './modules/category/category.module';
+import { Cloudinary } from './modules/cloudinary/entities/cloudinary.entity';
+import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
 
 @Module({
   imports: [
@@ -60,6 +62,7 @@ import { CategoryModule } from './modules/category/category.module';
     ProductModule,
     SupplierModule,
     CategoryModule,
+    CloudinaryModule,
   ],
   controllers: [AppController],
   providers: [
