@@ -7,18 +7,26 @@ import {
   Param,
   Delete,
   Query,
+  UseInterceptors,
+  UploadedFiles,
 } from '@nestjs/common';
 import { ProductService } from './product.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { RemoveImage } from './dto/remove-image.dto';
 
-@Controller('product')
+@Controller('products')
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
   @Post()
-  create(@Body() createProductDto: CreateProductDto) {
-    return this.productService.create(createProductDto);
+  @UseInterceptors(FilesInterceptor('files'))
+  create(
+    @Body() createProductDto: CreateProductDto,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    return this.productService.create(createProductDto, files);
   }
 
   @Get()
@@ -30,18 +38,31 @@ export class ProductController {
     return this.productService.findAll(query, +current, +pageSize);
   }
 
-  @Get(':id')
-  findOne(@Param('id') _id: string) {
-    return this.productService.findOne(_id);
-  }
   @Get('/shop/:id')
   findByShopId(@Param('id') _id: string) {
     return this.productService.findByShopId(_id);
   }
 
+  @Get(':slug')
+  findByProductSlug(@Param('slug') slug: string) {
+    return this.productService.findByProductSlug(slug);
+  }
   @Patch(':id')
-  update(@Param('id') _id: string, @Body() updateProductDto: UpdateProductDto) {
-    return this.productService.update(_id, updateProductDto);
+  @UseInterceptors(FilesInterceptor('files'))
+  update(
+    @Param('id') _id: string,
+    @Body() updateProductDto: UpdateProductDto,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    return this.productService.update(_id, updateProductDto, files);
+  }
+
+  @Patch(':id/remove-image')
+  async removeImage(
+    @Param('id') _id: string,
+    @Body() removeImage: RemoveImage,
+  ) {
+    return this.productService.removeImage(_id, removeImage);
   }
 
   @Delete(':id')

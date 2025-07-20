@@ -45,4 +45,11 @@ export class CloudinaryService {
     const uploadPromises = files.map((file) => this.uploadFile(file));
     return Promise.all(uploadPromises);
   }
+  async deleteFile(_id: string) {
+    return await cloudinary.uploader.destroy(_id);
+  }
+  async deleteFiles(_ids: string[]): Promise<any> {
+    const deleteFiles = _ids.map((id) => this.deleteFile(id));
+    return Promise.all(deleteFiles);
+  }
 }

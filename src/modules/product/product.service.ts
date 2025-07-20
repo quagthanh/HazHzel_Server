@@ -11,21 +11,62 @@ import mongoose, { Model, Mongoose } from 'mongoose';
 import aqp from 'api-query-params';
 import { Supplier } from '../supplier/schemas/supplier.schema';
 import { isValidId } from '@/shared/helpers/utils';
+import { Cloudinary } from '../cloudinary/entities/cloudinary.entity';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import { RemoveImage } from './dto/remove-image.dto';
+import slugify from 'slugify';
 
 @Injectable()
 export class ProductService {
   constructor(
     @InjectModel(Product.name) private readonly productModel: Model<Product>,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
-  async create(createProductDto: CreateProductDto) {
-    const { categoryId, supplierId, ...ortherFields } = createProductDto;
-    const data = await this.productModel.create({
-      categoryId,
-      supplierId,
-      ...ortherFields,
+  private checkSlugExist = async (slug: string): Promise<boolean> => {
+    const isSlugExist = await this.productModel.exists({ slug });
+    return !!isSlugExist;
+  };
+  private generateSlugUnique = async (text: string): Promise<string> => {
+    let baseSlug = slugify(text, {
+      replacement: '-',
+      trim: true,
+      lower: true,
+      locale: 'vi',
     });
-    return data;
+    let slug = baseSlug;
+    let count = 1;
+    while (await this.checkSlugExist(slug)) {
+      slug = `${baseSlug}-${count++}`;
+    }
+
+    return slug;
+  };
+  async create(
+    createProductDto: CreateProductDto,
+    files: Express.Multer.File[],
+  ) {
+    const { name, ...otherFields } = createProductDto;
+    const slug = await this.generateSlugUnique(name);
+    if (files.length === 0) {
+      throw new BadRequestException('Hãy chọn ít nhất 1 hình');
+    }
+    const uploadedImages = await this.cloudinaryService.uploadMultiFiles(files);
+    const simplifiedImages = uploadedImages.map((img) => ({
+      public_id: img.public_id,
+      secure_url: img.secure_url,
+      width: img.width,
+      height: img.height,
+    }));
+
+    const newProduct = await this.productModel.create({
+      images: simplifiedImages,
+      name,
+      slug,
+      ...otherFields,
+    });
+
+    return newProduct;
   }
 
   async findAll(query: string, current: number, pageSize: number) {
@@ -59,19 +100,7 @@ export class ProductService {
       result,
     };
   }
-  async findOne(_id: string) {
-    if (!isValidId(_id)) {
-      throw new BadRequestException('Id product không hợp lệ ');
-    }
-    const data = await this.productModel
-      .findById(_id)
-      .populate(['supplierId', { path: 'categoryId' }]);
-    if (!data) {
-      throw new NotFoundException('Không tìm thấy sản phẩm');
-    }
 
-    return data;
-  }
   async findByShopId(_id: string) {
     if (!isValidId(_id)) {
       throw new BadRequestException('Id shop để get product không hợp lệ ');
@@ -82,16 +111,120 @@ export class ProductService {
     }
     return data;
   }
+  async findByProductSlug(slug: string) {
+    const data = (await this.productModel.findOne({ slug: slug })).populate([
+      'supplierId',
+      { path: 'categoryId' },
+    ]);
+    if (!data) {
+      throw new BadRequestException('Sản phẩm không hợp lệ');
+    }
+    return data;
+  }
+  async update(
+    _id: string,
+    updateProductDto: UpdateProductDto,
+    files: Express.Multer.File[],
+  ) {
+    if (!isValidId(_id)) {
+      throw new BadRequestException('Id sản phẩm để update không hợp lệ');
+    }
 
-  async update(_id: string, updateProductDto: UpdateProductDto) {
+    const data = await this.productModel.findById(_id);
+    if (!data) {
+      throw new BadRequestException('Không tìm thấy sản phẩm để update');
+    }
+
+    let existingImages = data.images;
+
+    if (files && files.length > 0) {
+      const uploadedImages =
+        await this.cloudinaryService.uploadMultiFiles(files);
+      const newImages = uploadedImages.map((img) => ({
+        public_id: img.public_id,
+        secure_url: img.secure_url,
+        width: img.width,
+        height: img.height,
+      }));
+      existingImages = [...existingImages, ...newImages];
+    }
+
     const result = await this.productModel.updateOne(
       { _id },
-      { ...updateProductDto },
+      { images: existingImages, ...updateProductDto },
     );
+
     return result;
   }
 
   async remove(_id: string) {
+    const data = await this.productModel.findById(_id);
+    if (!data) {
+      throw new BadRequestException('Không tìm thấy id sản phẩm ');
+    }
+    const id_image = data?.images.map((img) => img.public_id);
+    await this.cloudinaryService.deleteFiles(id_image);
     return await this.productModel.deleteOne({ _id });
   }
+
+  async removeImage(_id: string, removeImage: RemoveImage) {
+    const { public_id } = removeImage;
+    if (!isValidId(_id)) {
+      throw new BadRequestException('Id sản phẩm không hợp lệ');
+    }
+
+    const product = await this.productModel.findById(_id);
+    if (!product) {
+      throw new NotFoundException('Không tìm thấy sản phẩm');
+    }
+
+    const imageExists = product.images.find(
+      (img) => img.public_id === public_id,
+    );
+    if (!imageExists) {
+      throw new BadRequestException('Ảnh không tồn tại trong sản phẩm');
+    }
+
+    // Xóa ảnh khỏi Cloudinary
+    await this.cloudinaryService.deleteFile(public_id);
+
+    // Cập nhật lại danh sách ảnh của sản phẩm (bỏ ảnh đã xóa)
+    const updatedImages = product.images.filter(
+      (img) => img.public_id !== public_id,
+    );
+
+    // Ghi lại vào database
+    await this.productModel.updateOne({ _id: _id }, { images: updatedImages });
+
+    return { message: 'Đã xóa ảnh thành công' };
+  }
+
+  // async removeImages(_id: string, removeImage: RemoveImage) {
+  //   const { public_ids } = removeImage;
+
+  //   if (!isValidId(_id)) {
+  //     throw new BadRequestException('Id sản phẩm để remove image không hợp lệ');
+  //   }
+
+  //   const data = await this.productModel.findById(_id);
+  //   if (!data) {
+  //     throw new BadRequestException('Không tìm thấy sản phẩm để remove image');
+  //   }
+
+  //   const currentImages = data.images;
+
+  //   // Giữ lại ảnh KHÔNG nằm trong danh sách cần xóa
+  //   const remainingImages = currentImages.filter(
+  //     (img) => !public_ids.includes(img.public_id),
+  //   );
+
+  //   // Xóa trên Cloudinary
+  //   await this.cloudinaryService.deleteFiles(public_ids);
+
+  //   // Cập nhật trong DB
+  //   return await this.productModel.updateOne(
+  //     { _id },
+  //     { images: remainingImages },
+  //   );
+  // }
 }

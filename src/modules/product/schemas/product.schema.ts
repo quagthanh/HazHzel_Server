@@ -1,5 +1,6 @@
 import { Variant } from '@/modules/variant/schemas/variant.schema';
 import { statusProduct } from '@/shared/enums/statusProduct.enum';
+import { ProductImage } from '@/shared/interfaces/product-image';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 
@@ -16,6 +17,9 @@ export class Product {
   @Prop({ type: String })
   description: string;
 
+  @Prop({ type: String, unique: true })
+  slug: string;
+
   @Prop({ type: Types.ObjectId, ref: 'Category' })
   categoryId: Types.ObjectId;
 
@@ -25,8 +29,8 @@ export class Product {
   @Prop({ type: [Object], default: [] })
   variants: Variant[];
 
-  @Prop({ type: [String], default: [] })
-  images: string[];
+  @Prop({ type: [Object], default: [] })
+  images: ProductImage[];
 
   @Prop({
     type: String,

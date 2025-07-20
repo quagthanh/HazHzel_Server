@@ -9,6 +9,8 @@ export class CreateProductDto {
   stock: number;
   @IsNotEmpty()
   description: string;
+  @IsOptional()
+  slug: string;
   @IsNotEmpty()
   categoryId: Types.ObjectId;
   @IsNotEmpty()

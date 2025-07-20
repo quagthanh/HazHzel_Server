@@ -17,6 +17,9 @@ export class Variant {
   @Prop({ type: Number, required: true })
   price: number;
 
+  @Prop({ type: String })
+  color: string[];
+
   @Prop({ type: [String], default: [] })
   options: string[];
 
