@@ -26,6 +26,9 @@ export class Product {
   @Prop({ type: Types.ObjectId, ref: 'Supplier' })
   supplierId: Types.ObjectId;
 
+  @Prop({ type: Number, default: 0 })
+  views: Number;
+
   @Prop({ type: [Object], default: [] })
   variants: Variant[];
 
@@ -38,6 +41,16 @@ export class Product {
     default: statusProduct.ACTIVE,
   })
   status: string;
+
+  @Prop({
+    type: Boolean,
+  })
+  is_sale: boolean;
+
+  @Prop({
+    type: Boolean,
+  })
+  is_hot: boolean;
 
   @Prop({ type: Date })
   createdAt: Date;

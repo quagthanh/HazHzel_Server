@@ -1,4 +1,5 @@
-import { IsEmail, IsNotEmpty } from 'class-validator';
+import { IsEmail, IsMongoId, IsNotEmpty } from 'class-validator';
+import { Types } from 'mongoose';
 export class CreateUserDto {
   @IsNotEmpty({ message: 'Tên không được để trống' })
   name: string;
@@ -13,4 +14,7 @@ export class CreateUserDto {
   address: string;
 
   image: string;
+
+  @IsNotEmpty()
+  roles: Types.ObjectId[];
 }

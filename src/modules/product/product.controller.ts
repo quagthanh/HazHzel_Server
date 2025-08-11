@@ -56,6 +56,10 @@ export class ProductController {
   ) {
     return this.productService.update(_id, updateProductDto, files);
   }
+  @Patch('/view/:slug')
+  async increaseProductView(@Param('slug') slug: string) {
+    return this.productService.increaseProductView(slug);
+  }
 
   @Patch(':id/remove-image')
   async removeImage(

@@ -22,14 +22,14 @@ export class RolesGuard implements CanActivate {
       return true;
     }
     const { user } = context.switchToHttp().getRequest();
-    if (!user?.role) {
+    if (!user?.roles) {
       throw new ForbiddenException({
         message: 'Truy cập bị từ chối: Người dùng không có quyền truy cập',
         error: 'Từ chối truy cập',
         statusCode: 403,
       });
     }
-    const hasPermission = requiredRoles.some((role) => user.role === role);
+    const hasPermission = requiredRoles.some((roles) => user.roles === roles);
     if (!hasPermission) {
       throw new ForbiddenException({
         message: `Truy cập bị từ chối: Yêu cầu role ${requiredRoles.join(', ')}`,

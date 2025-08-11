@@ -121,6 +121,13 @@ export class ProductService {
     }
     return data;
   }
+  async increaseProductView(slug: string): Promise<number> {
+    return await this.productModel.findOneAndUpdate(
+      { slug },
+      { $inc: { views: 1 } },
+      { new: true },
+    );
+  }
   async update(
     _id: string,
     updateProductDto: UpdateProductDto,

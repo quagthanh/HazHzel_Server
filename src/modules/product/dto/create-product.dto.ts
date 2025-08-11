@@ -16,6 +16,8 @@ export class CreateProductDto {
   @IsNotEmpty()
   supplierId: Types.ObjectId;
   @IsOptional()
+  views: number;
+  @IsOptional()
   variants: Variant[];
   @IsOptional()
   images: string[];

@@ -10,15 +10,16 @@ export class CloudinaryService {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
           folder: 'mono-store',
-          responsive_breakpoints: [
-            {
-              create_derived: true,
-              bytes_step: 20000,
-              min_width: 200,
-              max_width: 1000,
-              max_images: 4,
-            },
-          ],
+          // responsive_breakpoints: [
+          //   {
+          //     create_derived: true,
+          //     bytes_step: 50000,
+          //     min_width: 320,
+          //     max_width: 1280,
+          //     max_images: 4,
+          //   },
+          // ],
+          // format: 'auto',
         },
         (error, result) => {
           if (error || !result) {

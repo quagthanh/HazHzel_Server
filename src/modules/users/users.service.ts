@@ -119,7 +119,7 @@ export class UsersService {
   }
   async handleRegister(registerDto: CreateAuthDto) {
     //check email
-    const { name, email, password } = registerDto;
+    const { name, email, password, roles } = registerDto;
     const isExist = await this.isEmailExist(email);
     if (isExist === true) {
       throw new BadRequestException('Email đã tồn tại');
@@ -132,6 +132,7 @@ export class UsersService {
       email,
       password: hashPasswordForRegister,
       codeId: codeId,
+      roles: roles,
       codeExpired: dayjs().add(3, 'minutes'),
     });
     //send email
@@ -148,7 +149,7 @@ export class UsersService {
   }
   async handleRegisterAdmin(registerAdminDto: CreateAdminAuthDto) {
     //check email
-    const { name, email, password, role } = registerAdminDto;
+    const { name, email, password, roles } = registerAdminDto;
     const isExist = await this.isEmailExist(email);
     if (isExist === true) {
       throw new BadRequestException('Email đã tồn tại');
@@ -161,7 +162,7 @@ export class UsersService {
       email,
       password: hashPasswordForRegister,
       codeId: codeId,
-      role: role,
+      roles: roles,
       codeExpired: dayjs().add(3, 'minutes'),
     });
     //send email
@@ -174,7 +175,7 @@ export class UsersService {
         activationCode: codeId,
       },
     });
-    return { _id: user._id, role: user.role };
+    return { _id: user._id, roles: user.roles };
   }
   async handleRegisterStoreOwner(
     registerStoreOwnerDto: CreateStoreOwnerAuthDto,
@@ -206,7 +207,7 @@ export class UsersService {
         activationCode: codeId,
       },
     });
-    return { _id: user._id, role: user.role };
+    return { _id: user._id, role: user.roles };
   }
   async handleActive(codeDto: CodeAuthDto) {
     const { _id, code } = codeDto;
@@ -318,5 +319,20 @@ export class UsersService {
   }
   async deleteAll() {
     return this.userModel.deleteMany();
+  }
+
+  async findByIdWithRolesAndPermissions(id: string) {
+    return this.userModel
+      .findById(id)
+      .populate({
+        path: 'roles',
+        model: 'Role',
+        populate: {
+          path: 'permissions',
+          model: 'Permission', // đảm bảo dùng đúng model
+        },
+      })
+      .lean()
+      .exec();
   }
 }
