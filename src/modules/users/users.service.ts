@@ -75,6 +75,7 @@ export class UsersService {
 
     const result = await this.userModel
       .find(filter)
+      .select(baseProjection)
       .skip(skip)
       .limit(pageSize)
       .sort(sort as any);
