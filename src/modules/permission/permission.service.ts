@@ -5,6 +5,7 @@ import { Permission } from './schemas/permission.schema';
 import mongoose, { Model, Mongoose } from 'mongoose';
 import aqp from 'api-query-params';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { Resources } from '@/shared/enums/resources.enum';
 
 export class PermissionService {
   constructor(
@@ -58,10 +59,22 @@ export class PermissionService {
     return this.permissionModel.findById({ _id });
   }
 
-  update(id: number, updatePermissionDto: UpdatePermissionDto) {
-    return `This action updates a #${id} permission`;
+  async findByResource(resource: Resources): Promise<Permission> {
+    const perm = await this.permissionModel.findOne({ resource }).lean();
+    if (!perm) {
+      throw new NotFoundException(
+        `Permission for resource ${resource} not found`,
+      );
+    }
+    return perm;
   }
-
+  async upsert(resource: Resources, action: Partial<Permission['action']>) {
+    return this.permissionModel.findOneAndUpdate(
+      { resource },
+      { $set: { action } },
+      { new: true, upsert: true },
+    );
+  }
   async remove(_id: string) {
     if (mongoose.isValidObjectId(_id)) {
       return this.permissionModel.deleteOne({ _id });

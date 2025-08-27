@@ -14,6 +14,7 @@ import {
 } from '@/modules/permission/schemas/permission.schema';
 import { UsersService } from '@/modules/users/users.service';
 import { Role } from '@/modules/role/schemas/role.schema';
+import { RolePopulated } from '@/shared/interfaces/role-populated';
 
 @Injectable()
 export class PermissionGuard implements CanActivate {
@@ -52,7 +53,4 @@ export class PermissionGuard implements CanActivate {
 
     return true;
   }
-}
-interface RolePopulated extends Omit<Role, 'permissions'> {
-  permissions: Permission[];
 }

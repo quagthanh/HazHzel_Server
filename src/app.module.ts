@@ -17,6 +17,7 @@ import { SupplierModule } from './modules/supplier/supplier.module';
 import { CategoryModule } from './modules/category/category.module';
 import { Cloudinary } from './modules/cloudinary/entities/cloudinary.entity';
 import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
+import { AdminModule } from './modules/admin/admin.module';
 
 @Module({
   imports: [
@@ -63,6 +64,7 @@ import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
     SupplierModule,
     CategoryModule,
     CloudinaryModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [

@@ -7,29 +7,28 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './schemas/user.schema';
 import { InjectModel } from '@nestjs/mongoose';
-import mongoose, { Model } from 'mongoose';
-import { hashPassword } from '@/shared/helpers/utils';
+import mongoose, { Model, Types } from 'mongoose';
+import { hashPassword, pickHighestRole } from '@/shared/helpers/utils';
 import aqp from 'api-query-params';
 import { v4 as uuidv4 } from 'uuid';
 import * as dayjs from 'dayjs';
 import { MailerService } from '@nestjs-modules/mailer';
-import {
-  CreateAdminAuthDto,
-  CreateAuthDto,
-  CreateStoreOwnerAuthDto,
-} from '@/auth/dto/create-auth.dto';
+import { CreateAuthDto } from '@/auth/dto/create-auth.dto';
 import {
   ChangePasswordDto,
   CodeAuthDto,
   RetryCodeDto,
   RetryPasswordDto,
 } from '@/auth/dto/checkcode-auth.dto';
+import { RoleEnum } from '@/shared/enums/role.enum';
+import { Role } from '../role/schemas/role.schema';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     private readonly mailerService: MailerService,
+    @InjectModel(Role.name) private readonly roleModel: Model<Role>,
   ) {}
   isEmailExist = async (email: string) => {
     const user = await this.userModel.exists({ email });
@@ -118,97 +117,36 @@ export class UsersService {
     }
   }
   async handleRegister(registerDto: CreateAuthDto) {
-    //check email
-    const { name, email, password, roles } = registerDto;
+    const { name, email, password } = registerDto;
+    const customerRole = RoleEnum.CUSTOMER;
     const isExist = await this.isEmailExist(email);
-    if (isExist === true) {
+    if (isExist) {
       throw new BadRequestException('Email đã tồn tại');
     }
-    //hash password
     const hashPasswordForRegister = await hashPassword(password);
     const codeId = uuidv4();
     const user = await this.userModel.create({
       name,
       email,
       password: hashPasswordForRegister,
-      codeId: codeId,
-      roles: roles,
+      codeId,
+      roles: [customerRole],
       codeExpired: dayjs().add(3, 'minutes'),
     });
-    //send email
+
     await this.mailerService.sendMail({
       to: user.email,
-      subject: 'Kích hoạt tài khoản của bạn ',
+      subject: 'Kích hoạt tài khoản của bạn',
       template: './register',
       context: {
         name: user?.name ?? user.email,
         activationCode: codeId,
       },
     });
+
     return { _id: user._id };
   }
-  async handleRegisterAdmin(registerAdminDto: CreateAdminAuthDto) {
-    //check email
-    const { name, email, password, roles } = registerAdminDto;
-    const isExist = await this.isEmailExist(email);
-    if (isExist === true) {
-      throw new BadRequestException('Email đã tồn tại');
-    }
-    //hash password
-    const hashPasswordForRegister = await hashPassword(password);
-    const codeId = uuidv4();
-    const user = await this.userModel.create({
-      name,
-      email,
-      password: hashPasswordForRegister,
-      codeId: codeId,
-      roles: roles,
-      codeExpired: dayjs().add(3, 'minutes'),
-    });
-    //send email
-    await this.mailerService.sendMail({
-      to: user.email,
-      subject: 'Kích hoạt tài khoản của bạn ',
-      template: './register',
-      context: {
-        name: user?.name ?? user.email,
-        activationCode: codeId,
-      },
-    });
-    return { _id: user._id, roles: user.roles };
-  }
-  async handleRegisterStoreOwner(
-    registerStoreOwnerDto: CreateStoreOwnerAuthDto,
-  ) {
-    //check email
-    const { name, email, password, role } = registerStoreOwnerDto;
-    const isExist = await this.isEmailExist(email);
-    if (isExist === true) {
-      throw new BadRequestException('Email đã tồn tại');
-    }
-    //hash password
-    const hashPasswordForRegister = await hashPassword(password);
-    const codeId = uuidv4();
-    const user = await this.userModel.create({
-      name,
-      email,
-      password: hashPasswordForRegister,
-      codeId: codeId,
-      role: role,
-      codeExpired: dayjs().add(3, 'minutes'),
-    });
-    //send email
-    await this.mailerService.sendMail({
-      to: user.email,
-      subject: 'Kích hoạt tài khoản của bạn ',
-      template: './register',
-      context: {
-        name: user?.name ?? user.email,
-        activationCode: codeId,
-      },
-    });
-    return { _id: user._id, role: user.roles };
-  }
+
   async handleActive(codeDto: CodeAuthDto) {
     const { _id, code } = codeDto;
     const data = await this.userModel.findOne({ _id: _id, codeId: code });
@@ -329,7 +267,7 @@ export class UsersService {
         model: 'Role',
         populate: {
           path: 'permissions',
-          model: 'Permission', // đảm bảo dùng đúng model
+          model: 'Permission',
         },
       })
       .lean()

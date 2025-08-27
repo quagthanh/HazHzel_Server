@@ -1,0 +1,31 @@
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Req,
+  Request,
+} from '@nestjs/common';
+import { AdminService } from './admin.service';
+import { InternalCreateUser } from './dto/internal-create-user.dto';
+import { Roles } from '@/shared/decorators/role.decorator';
+import { RoleEnum } from '@/shared/enums/role.enum';
+import { ResponseMessage } from '@/shared/decorators/customize';
+
+@Controller('admin')
+export class AdminController {
+  constructor(private readonly adminService: AdminService) {}
+  @Roles(RoleEnum.ADMIN, RoleEnum.SYSTEM_ADMIN)
+  @ResponseMessage('Successful create')
+  @Post('/create-users')
+  handleRegister(
+    @Body() internalRegisterDto: InternalCreateUser,
+    @Request() req,
+  ) {
+    const callerRoles = req?.user?.roles;
+    return this.adminService.handleRegister(internalRegisterDto, callerRoles);
+  }
+}

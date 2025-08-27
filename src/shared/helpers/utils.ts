@@ -1,5 +1,7 @@
 import * as bcrypt from 'bcrypt';
 import mongoose from 'mongoose';
+import { RoleEnum, RoleOrder } from '../enums/role.enum';
+import { CREATE_MATRIX } from '../constants/create_policy';
 
 const saltOrRounds = 10;
 
@@ -18,3 +20,8 @@ export const comparePassword = async (
 };
 
 export const isValidId = (id: string): boolean => mongoose.isValidObjectId(id);
+export function pickHighestRole(roles: RoleEnum[]): RoleEnum {
+  const priority = [RoleEnum.SYSTEM_ADMIN, RoleEnum.ADMIN];
+
+  return priority.find((role) => roles.includes(role));
+}

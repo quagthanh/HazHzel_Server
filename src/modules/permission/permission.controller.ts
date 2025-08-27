@@ -35,13 +35,13 @@ export class PermissionController {
     return this.permissionService.findOne(id);
   }
 
-  @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updatePermissionDto: UpdatePermissionDto,
-  ) {
-    return this.permissionService.update(+id, updatePermissionDto);
-  }
+  // @Patch(':id')
+  // update(
+  //   @Param('id') id: string,
+  //   @Body() updatePermissionDto: UpdatePermissionDto,
+  // ) {
+  //   return this.permissionService.update(+id, updatePermissionDto);
+  // }
 
   @Delete(':id')
   async remove(@Param('id') _id: string) {

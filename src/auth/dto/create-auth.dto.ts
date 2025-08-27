@@ -9,26 +9,4 @@ export class CreateAuthDto {
   password: string;
   @IsNotEmpty()
   name: string;
-  @IsNotEmpty()
-  roles: Types.ObjectId[];
-}
-export class CreateAdminAuthDto {
-  @IsNotEmpty({ message: 'email không được để trống' })
-  email: string;
-  @IsNotEmpty({ message: 'Password không được để trống' })
-  password: string;
-  @IsNotEmpty()
-  name: string;
-  @IsNotEmpty({ message: 'Hãy chọn role Admin hoặc StoreOwner' })
-  roles: RoleEnum;
-}
-export class CreateStoreOwnerAuthDto {
-  @IsNotEmpty({ message: 'email không được để trống' })
-  email: string;
-  @IsNotEmpty({ message: 'Password không được để trống' })
-  password: string;
-  @IsNotEmpty()
-  name: string;
-  @IsNotEmpty({ message: 'Hãy chọn role User hoặc StoreOwner' })
-  role: string;
 }
