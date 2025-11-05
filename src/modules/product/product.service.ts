@@ -109,6 +109,45 @@ export class ProductService {
     }
     return data;
   }
+
+  async findByCategoryId(
+    query: string,
+    categoryId: string,
+    current: number,
+    pageSize: number,
+  ) {
+    const { filter, sort, projection } = aqp(query);
+    console.log('check filter', filter);
+    if (!current) current = 1;
+    if (!pageSize) pageSize = 5;
+
+    if (filter.current) delete filter.current;
+    if (filter.pageSize) delete filter.pageSize;
+    if (!isValidId(categoryId)) {
+      throw new BadRequestException('Id category không hợp lệ');
+    }
+
+    const totalItems = await this.productModel.countDocuments({ categoryId });
+    const totalPages = Math.ceil(totalItems / pageSize);
+
+    const skip = (current - 1) * pageSize;
+
+    const result = await this.productModel
+      .find({ categoryId })
+      .skip(skip)
+      .limit(pageSize)
+      .populate(['supplierId', { path: 'categoryId' }]);
+
+    return {
+      meta: {
+        current: current,
+        pageSize: pageSize,
+        pages: totalPages,
+        total: totalItems,
+      },
+      result,
+    };
+  }
   async findByProductSlug(slug: string) {
     const data = (await this.productModel.findOne({ slug: slug })).populate([
       'supplierId',
@@ -177,30 +216,21 @@ export class ProductService {
     if (!isValidId(_id)) {
       throw new BadRequestException('Id sản phẩm không hợp lệ');
     }
-
     const product = await this.productModel.findById(_id);
     if (!product) {
       throw new NotFoundException('Không tìm thấy sản phẩm');
     }
-
     const imageExists = product.images.find(
       (img) => img.public_id === public_id,
     );
     if (!imageExists) {
       throw new BadRequestException('Ảnh không tồn tại trong sản phẩm');
     }
-
-    // Xóa ảnh khỏi Cloudinary
     await this.cloudinaryService.deleteFile(public_id);
-
-    // Cập nhật lại danh sách ảnh của sản phẩm (bỏ ảnh đã xóa)
     const updatedImages = product.images.filter(
       (img) => img.public_id !== public_id,
     );
-
-    // Ghi lại vào database
     await this.productModel.updateOne({ _id: _id }, { images: updatedImages });
-
     return { message: 'Đã xóa ảnh thành công' };
   }
 

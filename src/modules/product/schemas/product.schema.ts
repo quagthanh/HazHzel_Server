@@ -30,9 +30,6 @@ export class Product {
   views: Number;
 
   @Prop({ type: [Object], default: [] })
-  variants: Variant[];
-
-  @Prop({ type: [Object], default: [] })
   images: ProductImage[];
 
   @Prop({

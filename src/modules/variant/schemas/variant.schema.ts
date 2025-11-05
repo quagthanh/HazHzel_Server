@@ -8,6 +8,9 @@ export class Variant {
   @Prop({ type: String, required: true })
   name: string;
 
+  @Prop({ type: Types.ObjectId, ref: 'Product', required: true })
+  productId: Types.ObjectId;
+
   @Prop({ type: Number, required: true })
   priceBeforeDiscount: number;
 
@@ -18,7 +21,7 @@ export class Variant {
   price: number;
 
   @Prop({ type: String })
-  color: string[];
+  color: string;
 
   @Prop({ type: [String], default: [] })
   options: string[];

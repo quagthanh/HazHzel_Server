@@ -6,11 +6,5 @@ export class CreateCategoryDto {
   name: string;
 
   @IsOptional()
-  parentId: Types.ObjectId;
-
-  @IsOptional()
-  image: string;
-
-  @IsOptional()
-  isActive: boolean;
+  slug?: string;
 }

@@ -8,11 +8,8 @@ export class Category {
   @Prop({ type: String, required: true })
   name: string;
 
-  @Prop({ type: Types.ObjectId, ref: 'Category' })
-  parentId: Types.ObjectId;
-
   @Prop({ type: String })
-  image: string;
+  slug: string;
 
   @Prop({ type: Boolean, default: true })
   isActive: boolean;

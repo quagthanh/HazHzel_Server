@@ -119,7 +119,12 @@ export class UsersService {
   }
   async handleRegister(registerDto: CreateAuthDto) {
     const { name, email, password } = registerDto;
-    const customerRole = RoleEnum.CUSTOMER;
+    const customerRole = await this.roleModel.findOne({
+      name: RoleEnum.CUSTOMER,
+    });
+    if (!customerRole) {
+      throw new BadRequestException('Không tìm thấy role CUSTOMER');
+    }
     const isExist = await this.isEmailExist(email);
     if (isExist) {
       throw new BadRequestException('Email đã tồn tại');
@@ -131,7 +136,7 @@ export class UsersService {
       email,
       password: hashPasswordForRegister,
       codeId,
-      roles: [customerRole],
+      roles: [customerRole._id],
       codeExpired: dayjs().add(3, 'minutes'),
     });
 

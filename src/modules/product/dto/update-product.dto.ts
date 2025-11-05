@@ -14,8 +14,6 @@ export class UpdateProductDto {
   @IsOptional()
   supplierId: Types.ObjectId;
   @IsOptional()
-  variants: Variant[];
-  @IsOptional()
   images: string[];
   @IsOptional()
   status: string;

@@ -18,8 +18,6 @@ export class CreateProductDto {
   @IsOptional()
   views: number;
   @IsOptional()
-  variants: Variant[];
-  @IsOptional()
   images: string[];
   @IsOptional()
   status: string;

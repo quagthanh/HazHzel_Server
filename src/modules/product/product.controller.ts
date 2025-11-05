@@ -47,6 +47,20 @@ export class ProductController {
   findByProductSlug(@Param('slug') slug: string) {
     return this.productService.findByProductSlug(slug);
   }
+  @Get('/by-category/:categoryId')
+  findByCategoryId(
+    @Query() query: string,
+    @Param('categoryId') categoryId: string,
+    @Query('current') current?: number,
+    @Query('pageSize') pageSize?: number,
+  ) {
+    return this.productService.findByCategoryId(
+      query,
+      categoryId,
+      Number(current),
+      Number(pageSize),
+    );
+  }
   @Patch(':id')
   @UseInterceptors(FilesInterceptor('files'))
   update(
