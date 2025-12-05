@@ -23,7 +23,7 @@ export class UsersController {
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
-
+  @Public()
   @Get()
   async findAll(
     @Query() query: string,

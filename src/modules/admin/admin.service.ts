@@ -12,7 +12,7 @@ import { Model, Types } from 'mongoose';
 import { hashPassword, pickHighestRole } from '@/shared/helpers/utils';
 import { CREATE_MATRIX } from '@/shared/constants/create_policy';
 import { User } from '../users/schemas/user.schema';
-import * as dayjs from 'dayjs';
+import dayjs from 'dayjs';
 import { v4 as uuidv4 } from 'uuid';
 import aqp from 'api-query-params';
 

@@ -10,6 +10,6 @@ import { Role, RoleSchema } from './schemas/role.schema';
   ],
   controllers: [RoleController],
   providers: [RoleService],
-  exports: [RoleModule],
+  exports: [RoleService, MongooseModule],
 })
 export class RoleModule {}

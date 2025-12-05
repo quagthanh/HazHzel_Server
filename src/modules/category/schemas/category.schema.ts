@@ -13,12 +13,6 @@ export class Category {
 
   @Prop({ type: Boolean, default: true })
   isActive: boolean;
-
-  @Prop({ type: Date })
-  createdAt: Date;
-
-  @Prop({ type: Date })
-  updatedAt: Date;
 }
 
 export const CategorySchema = SchemaFactory.createForClass(Category);

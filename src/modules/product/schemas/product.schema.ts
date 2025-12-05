@@ -11,9 +11,6 @@ export class Product {
   @Prop({ type: String, required: true })
   name: string;
 
-  @Prop({ type: Number, required: true, min: 0 })
-  stock: number;
-
   @Prop({ type: String })
   description: string;
 
@@ -27,7 +24,7 @@ export class Product {
   supplierId: Types.ObjectId;
 
   @Prop({ type: Number, default: 0 })
-  views: Number;
+  views: number;
 
   @Prop({ type: [Object], default: [] })
   images: ProductImage[];
@@ -42,18 +39,12 @@ export class Product {
   @Prop({
     type: Boolean,
   })
-  is_sale: boolean;
+  isSale: boolean;
 
   @Prop({
     type: Boolean,
   })
-  is_hot: boolean;
-
-  @Prop({ type: Date })
-  createdAt: Date;
-
-  @Prop({ type: Date })
-  updatedAt: Date;
+  isHot: boolean;
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);

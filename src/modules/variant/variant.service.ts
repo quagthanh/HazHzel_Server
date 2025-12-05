@@ -20,7 +20,7 @@ export class VariantService {
     return `This action updates a #${id} variant`;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} variant`;
+  remove() {
+    return `This action removes variant`;
   }
 }

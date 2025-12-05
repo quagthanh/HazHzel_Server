@@ -18,6 +18,7 @@ import { CategoryModule } from './modules/category/category.module';
 import { Cloudinary } from './modules/cloudinary/entities/cloudinary.entity';
 import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { VariantModule } from './modules/variant/variant.module';
 
 @Module({
   imports: [
@@ -65,6 +66,7 @@ import { AdminModule } from './modules/admin/admin.module';
     CategoryModule,
     CloudinaryModule,
     AdminModule,
+    VariantModule,
   ],
   controllers: [AppController],
   providers: [

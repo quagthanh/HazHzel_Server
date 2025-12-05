@@ -27,12 +27,6 @@ export class Supplier {
 
   @Prop({ type: String, enum: ['active', 'inactive'], default: 'active' })
   status: string;
-
-  @Prop({ type: Date })
-  createdAt: Date;
-
-  @Prop({ type: Date })
-  updatedAt: Date;
 }
 
 export const SupplierSchema = SchemaFactory.createForClass(Supplier);

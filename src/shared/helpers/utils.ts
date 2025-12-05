@@ -1,7 +1,10 @@
 import * as bcrypt from 'bcrypt';
 import mongoose from 'mongoose';
-import { RoleEnum, RoleOrder } from '../enums/role.enum';
-import { CREATE_MATRIX } from '../constants/create_policy';
+import { RoleEnum } from '../enums/role.enum';
+import { Model } from 'mongoose';
+import aqp from 'api-query-params';
+import { Role } from '@/modules/role/schemas/role.schema';
+import { BadRequestException } from '@nestjs/common';
 
 const saltOrRounds = 10;
 
@@ -24,4 +27,52 @@ export function pickHighestRole(roles: RoleEnum[]): RoleEnum {
   const priority = [RoleEnum.SYSTEM_ADMIN, RoleEnum.ADMIN];
 
   return priority.find((role) => roles.includes(role));
+}
+export async function pagination(
+  model: Model<any>,
+  query: string,
+  current: number = 1,
+  pageSize: number = 5,
+  populate: any[] = [],
+  baseProjection?: any,
+) {
+  const { filter, sort, projection } = aqp(query);
+  if (!current) current = 1;
+  if (!pageSize) pageSize = 5;
+
+  if (filter.current) delete filter.current;
+  if (filter.pageSize) delete filter.pageSize;
+
+  const totalItems = await model.countDocuments(filter);
+  const totalPages = Math.ceil(totalItems / pageSize);
+
+  const skip = (current - 1) * pageSize;
+  let finalProjection = projection;
+  finalProjection = projection
+    ? { ...baseProjection, ...projection }
+    : baseProjection;
+  const result = await model
+    .find(filter)
+    .skip(skip)
+    .limit(pageSize)
+    .select(finalProjection)
+    .sort(sort as any)
+    .populate(populate);
+  return {
+    meta: {
+      current: current,
+      pageSize: pageSize,
+      pages: totalPages,
+      total: totalItems,
+    },
+    result,
+  };
+}
+
+export async function CheckRole(roleModel: Model<Role>, _id: string) {
+  const customerRole = await roleModel.findOne({ _id });
+  if (customerRole?.name !== RoleEnum.CUSTOMER) {
+    throw new BadRequestException('Must is customer role');
+  }
+  return !!customerRole;
 }

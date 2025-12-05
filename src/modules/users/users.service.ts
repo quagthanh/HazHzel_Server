@@ -8,10 +8,9 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './schemas/user.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { Model, Types } from 'mongoose';
-import { hashPassword, pickHighestRole } from '@/shared/helpers/utils';
-import aqp from 'api-query-params';
+import { hashPassword, pagination } from '@/shared/helpers/utils';
 import { v4 as uuidv4 } from 'uuid';
-import * as dayjs from 'dayjs';
+import dayjs from 'dayjs';
 import { MailerService } from '@nestjs-modules/mailer';
 import { CreateAuthDto } from '@/auth/dto/create-auth.dto';
 import {
@@ -55,39 +54,9 @@ export class UsersService {
   }
 
   async findAll(query: string, current: number, pageSize: number) {
-    const { filter, sort, projection } = aqp(query);
-
-    if (!current) current = 1;
-    if (!pageSize) pageSize = 5;
-
-    if (filter.current) delete filter.current;
-    if (filter.pageSize) delete filter.pageSize;
-
-    const totalItems = await this.userModel.countDocuments(filter);
-    const totalPages = Math.ceil(totalItems / pageSize);
-
-    const skip = (current - 1) * pageSize;
-
-    const baseProjection = { password: 0 };
-    const finalProjection = projection
-      ? { ...projection, baseProjection }
-      : baseProjection;
-
-    const result = await this.userModel
-      .find(filter)
-      .select(baseProjection)
-      .skip(skip)
-      .limit(pageSize)
-      .sort(sort as any);
-    return {
-      meta: {
-        current: current,
-        pageSize: pageSize,
-        pages: totalPages,
-        total: totalItems,
-      },
-      result,
-    };
+    return pagination(this.userModel, query, current, pageSize, [], {
+      password: 0,
+    });
   }
 
   async findOne(_id: string) {

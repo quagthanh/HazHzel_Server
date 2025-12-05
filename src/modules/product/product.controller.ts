@@ -15,6 +15,7 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { RemoveImage } from './dto/remove-image.dto';
+import { ResponseMessage } from '@/shared/decorators/customize';
 
 @Controller('products')
 export class ProductController {
@@ -30,6 +31,7 @@ export class ProductController {
   }
 
   @Get()
+  @ResponseMessage('Fetched all products successfull')
   findAll(
     @Query() query: string,
     @Query('current') current: string,

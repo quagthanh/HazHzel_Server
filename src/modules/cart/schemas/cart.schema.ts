@@ -12,9 +12,6 @@ export class Cart {
   @Prop({ type: [CartItem], default: [] })
   items: CartItem[];
 
-  @Prop({ type: Date, default: Date.now })
-  updatedAt: Date;
-
   @Prop({ type: String })
   itemCount: string;
 

@@ -13,13 +13,13 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
     super();
   }
 
-  async validate(username: string, password: string): Promise<any> {
-    const user = await this.authService.validateUser(username, password);
+  async validate(email: string, password: string): Promise<any> {
+    const user = await this.authService.validateUser(email, password);
     if (!user) {
-      throw new UnauthorizedException({ message: 'Username / Password sai' });
+      throw new UnauthorizedException({ message: 'Username / Password wrong' });
     }
     if (user.isActive === false) {
-      throw new BadRequestException('Tài khoản chưa được kích hoạt');
+      throw new BadRequestException('Account is not ative yet');
     }
     return user;
   }

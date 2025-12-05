@@ -9,6 +9,7 @@ import {
   RetryCodeDto,
   RetryPasswordDto,
 } from './dto/checkcode-auth.dto';
+import { AuthResponseDto, UserResponseDto } from './dto/auth-response.dto';
 @Injectable()
 export class AuthService {
   constructor(
@@ -16,8 +17,8 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async validateUser(username: string, pass: string): Promise<any> {
-    const user = await this.usersService.findByEmail(username);
+  async validateUser(email: string, pass: string): Promise<any> {
+    const user = await this.usersService.findByEmail(email);
     if (!user) {
       return null;
     }
@@ -28,17 +29,18 @@ export class AuthService {
     }
     return user;
   }
-  async login(user: any) {
+  async login(user: UserResponseDto) {
     const payload = { username: user.email, sub: user._id, roles: user.roles };
-    return {
+    let result = {
       user: {
-        _id: user.id,
+        _id: user._id,
         name: user.name,
         email: user.email,
-        roles: user.role,
+        roles: user.roles,
       },
       access_token: this.jwtService.sign(payload),
-    };
+    } as AuthResponseDto;
+    return result;
   }
   handleRegister = async (registerDto: CreateAuthDto) => {
     return await this.usersService.handleRegister(registerDto);

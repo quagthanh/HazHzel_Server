@@ -10,9 +10,6 @@ export class CartItem {
 
   @Prop({ type: Number, required: true, min: 1 })
   quantity: number;
-
-  @Prop({ type: Date, default: Date.now })
-  addedAt: Date;
 }
 
 export const CartItemSchema = SchemaFactory.createForClass(CartItem);

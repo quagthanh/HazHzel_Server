@@ -9,7 +9,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Product } from './schemas/product.schema';
 import { Model } from 'mongoose';
 import aqp from 'api-query-params';
-import { isValidId } from '@/shared/helpers/utils';
+import { isValidId, pagination } from '@/shared/helpers/utils';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { RemoveImage } from './dto/remove-image.dto';
 import slugify from 'slugify';
@@ -68,35 +68,10 @@ export class ProductService {
   }
 
   async findAll(query: string, current: number, pageSize: number) {
-    const { filter, sort, projection } = aqp(query);
-
-    if (!current) current = 1;
-    if (!pageSize) pageSize = 5;
-
-    if (filter.current) delete filter.current;
-    if (filter.pageSize) delete filter.pageSize;
-
-    const totalItems = await this.productModel.countDocuments(filter);
-    const totalPages = Math.ceil(totalItems / pageSize);
-
-    const skip = (current - 1) * pageSize;
-
-    const result = await this.productModel
-      .find(filter)
-      .skip(skip)
-      .limit(pageSize)
-      .select(projection)
-      .sort(sort as any)
-      .populate(['supplierId', { path: 'categoryId' }]);
-    return {
-      meta: {
-        current: current,
-        pageSize: pageSize,
-        pages: totalPages,
-        total: totalItems,
-      },
-      result,
-    };
+    return pagination(this.productModel, query, +current, +pageSize, [
+      'supplierId',
+      { path: 'categoryId' },
+    ]);
   }
 
   async findByShopId(_id: string) {
