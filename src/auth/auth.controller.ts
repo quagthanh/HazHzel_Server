@@ -38,11 +38,15 @@ export class AuthController {
   }
 
   @Public()
+  @ResponseMessage('Enter the following code below to check code')
   @Post('check-code')
   checkCode(@Body() codeDto: CodeAuthDto) {
     return this.authService.checkCode(codeDto);
   }
   @Public()
+  @ResponseMessage(
+    'Your previous activation code has expired. A new activation code has been sent to your email.',
+  )
   @Post('retry-active')
   retryActive(@Body() retryCodeDto: RetryCodeDto) {
     return this.authService.retryActive(retryCodeDto);
