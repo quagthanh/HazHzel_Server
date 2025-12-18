@@ -12,5 +12,6 @@ import { CloudinaryModule } from '../cloudinary/cloudinary.module';
   ],
   controllers: [ProductController],
   providers: [ProductService],
+  exports: [ProductService, MongooseModule],
 })
 export class ProductModule {}

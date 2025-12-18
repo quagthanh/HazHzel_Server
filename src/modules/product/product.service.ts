@@ -42,7 +42,7 @@ export class ProductService {
   };
   async create(
     createProductDto: CreateProductDto,
-    files: Express.Multer.File[],
+    files: Express.Multer.File[] = [],
   ) {
     const { name, ...otherFields } = createProductDto;
     const slug = await this.generateSlugUnique(name);

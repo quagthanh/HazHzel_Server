@@ -17,14 +17,15 @@ import { JwtAuthGuard } from '@/auth/strategies/jwt/jwt-auth.guard';
 @Controller('cloudinary')
 export class CloudinaryController {
   constructor(private readonly cloudinaryService: CloudinaryService) {}
-  @Public()
+  @UseGuards(PermissionGuard)
+  @Permission(Resources.PERMISSION, 'read')
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
   async uploadImage(@UploadedFile() file: Express.Multer.File) {
     return this.cloudinaryService.uploadFile(file);
   }
-  @UseGuards(JwtAuthGuard, PermissionGuard)
-  @Permission(Resources.PERMISSION, 'read')
+  @UseGuards(JwtAuthGuard)
+  @Public()
   @Post('multiple')
   @UseInterceptors(FilesInterceptor('files'))
   async uploadMultipleImages(@UploadedFiles() files: Express.Multer.File[]) {

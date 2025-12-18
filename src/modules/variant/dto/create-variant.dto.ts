@@ -1,6 +1,64 @@
-import { IsNotEmpty } from 'class-validator';
+import {
+  IsString,
+  IsMongoId,
+  IsNumber,
+  IsOptional,
+  IsArray,
+  Min,
+  IsNotEmpty,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateVariantDto {
+  @IsString()
   @IsNotEmpty()
-  _id: string;
+  name: string;
+
+  @IsMongoId()
+  @IsNotEmpty()
+  productId: string;
+
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  originalPrice: number;
+
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  discountPrice?: number;
+
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  currentPrice?: number;
+
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  promoCodePrice?: number;
+
+  @IsString()
+  @IsOptional()
+  color?: string;
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  options?: string[];
+
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  stock: number;
+
+  @IsOptional()
+  images: string[];
+
+  @IsString()
+  @IsOptional()
+  sku?: string;
 }

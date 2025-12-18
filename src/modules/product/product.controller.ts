@@ -23,6 +23,7 @@ export class ProductController {
 
   @Post()
   @UseInterceptors(FilesInterceptor('files'))
+  @ResponseMessage('Create product successful')
   create(
     @Body() createProductDto: CreateProductDto,
     @UploadedFiles() files: Express.Multer.File[],

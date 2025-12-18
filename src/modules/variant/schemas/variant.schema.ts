@@ -1,3 +1,4 @@
+import { ProductImage } from '@/shared/interfaces/product-image';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 
@@ -28,6 +29,9 @@ export class Variant {
 
   @Prop({ type: [String], default: [] })
   options: string[];
+
+  @Prop({ type: [Object], default: [] })
+  images: ProductImage[];
 
   @Prop({ type: Number, required: true, min: 0 })
   stock: number;

@@ -6,40 +6,49 @@ import {
   Patch,
   Param,
   Delete,
+  UseInterceptors,
+  UploadedFiles,
 } from '@nestjs/common';
 import { VariantService } from './variant.service';
 import { CreateVariantDto } from './dto/create-variant.dto';
 import { UpdateVariantDto } from './dto/update-variant.dto';
-import { IS_PUBLIC_KEY, Public } from '@/shared/decorators/customize';
-import { Roles } from '@/shared/decorators/role.decorator';
-import { RoleEnum } from '@/shared/enums/role.enum';
-
-@Controller('variant')
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { RemoveImage } from '../product/dto/remove-image.dto';
+@Controller('variants')
 export class VariantController {
   constructor(private readonly variantService: VariantService) {}
 
   @Post()
-  create(@Body() createVariantDto: CreateVariantDto) {
-    return this.variantService.create(createVariantDto);
-  }
-  @Public()
-  @Get()
-  findAll() {
-    return this.variantService.findAll();
+  @UseInterceptors(FilesInterceptor('files'))
+  create(
+    @Body() dto: CreateVariantDto,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    return this.variantService.create(dto, files);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.variantService.findOne(+id);
+  @Get('/by-product/:productId')
+  findByProduct(@Param('productId') productId: string) {
+    return this.variantService.findByProduct(productId);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateVariantDto: UpdateVariantDto) {
-    return this.variantService.update(+id, updateVariantDto);
+  @UseInterceptors(FilesInterceptor('files'))
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateVariantDto,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    return this.variantService.update(id, dto, files);
   }
-  @Public()
-  @Delete()
-  remove() {
-    return this.variantService.remove();
+
+  @Patch(':id/remove-image')
+  removeImage(@Param('id') id: string, @Body() removeImage: RemoveImage) {
+    return this.variantService.removeImage(id, removeImage);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.variantService.remove(id);
   }
 }

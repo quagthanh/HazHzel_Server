@@ -54,29 +54,36 @@ export class UsersService {
   }
 
   async findAll(query: string, current: number, pageSize: number) {
-    return pagination(this.userModel, query, current, pageSize, [], {
-      password: 0,
-    });
+    return pagination(
+      this.userModel,
+      query,
+      current,
+      pageSize,
+      [{ path: 'roles' }],
+      {
+        password: 0,
+      },
+    );
   }
 
   async findOne(_id: string) {
     return this.userModel.findOne({ _id });
   }
   async findByEmail(email: string) {
-    try {
-      const user = await this.userModel.findOne({ email });
-      if (!user) {
-        throw new NotFoundException('Email không tồn tại');
-      }
-      return user;
-    } catch {
-      throw new BadRequestException('Lỗi khi fetch thông tin user bằng email');
+    const user = await this.userModel.findOne({ email });
+    if (!user) {
+      throw new NotFoundException('Email không tồn tại');
     }
+    return user;
   }
+
   async update(updateUserDto: UpdateUserDto) {
     const { _id, ...remain } = updateUserDto;
-    const result = await this.userModel.updateOne({ _id }, { ...remain });
-    return { result, ...remain };
+    const user = await this.userModel.findById(_id);
+    if (!user) throw new NotFoundException('User không tồn tại');
+
+    const result = await user.updateOne(remain);
+    return result;
   }
 
   async remove(_id: string) {
@@ -206,19 +213,19 @@ export class UsersService {
     }
   }
   async changePassword(changePasswordDto: ChangePasswordDto) {
-    const { email, password, confirmPassword } = changePasswordDto;
+    const { email, password, confirmPassword, code } = changePasswordDto;
     try {
       if (password !== confirmPassword) {
         throw new BadRequestException('Mật khẩu nhập lại không trùng khớp');
       }
-      const user = await this.userModel.findOne({ email });
+      const user = await this.userModel.findOne({ email, code });
       if (!user) {
         throw new BadRequestException('Tài khoản không tồn tại');
       }
       //check code's expired
       const isBeforeCheck = dayjs().isBefore(user.codeExpired);
       if (isBeforeCheck) {
-        const newPassword = await hashPassword(user.password);
+        const newPassword = await hashPassword(password);
         await user.updateOne({ password: newPassword });
         return { isBeforeCheck };
       } else {
