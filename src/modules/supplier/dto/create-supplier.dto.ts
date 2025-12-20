@@ -1,23 +1,28 @@
-import { IsNotEmpty, IsOptional } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class CreateSupplierDto {
-  @IsNotEmpty({ message: 'Tên supplier khong duoc trong' })
+  @IsNotEmpty({ message: 'Supplier name is required' })
   name: string;
+
   @IsNotEmpty()
   contactName: string;
 
   @IsOptional()
-  email: string;
+  @IsEmail()
+  email?: string;
 
   @IsOptional()
-  phone: string;
+  phone?: string;
 
   @IsOptional()
-  address: string;
+  images: string[];
 
   @IsOptional()
-  description: string;
+  address?: string;
 
   @IsOptional()
-  status: string;
+  description?: string;
+
+  @IsOptional()
+  status?: string;
 }

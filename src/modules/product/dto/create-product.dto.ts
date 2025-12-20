@@ -1,6 +1,6 @@
 import { Variant } from '@/modules/variant/schemas/variant.schema';
 import { IsNotEmpty, IsOptional } from 'class-validator';
-import { Types } from 'mongoose';
+import { BooleanExpression, Types } from 'mongoose';
 
 export class CreateProductDto {
   @IsNotEmpty()
@@ -19,4 +19,6 @@ export class CreateProductDto {
   images: string[];
   @IsOptional()
   status: string;
+  @IsOptional()
+  isHot?: boolean;
 }

@@ -7,9 +7,13 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Product } from './schemas/product.schema';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import aqp from 'api-query-params';
-import { isValidId, pagination } from '@/shared/helpers/utils';
+import {
+  isValidId,
+  pagination,
+  paginationAggregate,
+} from '@/shared/helpers/utils';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { RemoveImage } from './dto/remove-image.dto';
 import slugify from 'slugify';
@@ -67,22 +71,173 @@ export class ProductService {
     return newProduct;
   }
 
-  async findAll(query: string, current: number, pageSize: number) {
+  async findAllForAdmin(query: string, current: number, pageSize: number) {
     return pagination(this.productModel, query, +current, +pageSize, [
       'supplierId',
       { path: 'categoryId' },
     ]);
   }
+  async findAll(query: string, current: number, pageSize: number) {
+    return paginationAggregate(this.productModel, query, current, pageSize, [
+      {
+        $lookup: {
+          from: 'variants',
+          localField: '_id',
+          foreignField: 'productId',
+          as: 'variants',
+        },
+      },
+      {
+        $unwind: {
+          path: '$variants',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $sort: {
+          'variants.currentPrice': 1,
+        },
+      },
 
-  async findByShopId(_id: string) {
-    if (!isValidId(_id)) {
-      throw new BadRequestException('Id shop để get product không hợp lệ ');
+      {
+        $group: {
+          _id: '$_id',
+          doc: { $first: '$$ROOT' },
+          cheapestVariant: { $first: '$variants' },
+        },
+      },
+
+      {
+        $replaceRoot: {
+          newRoot: {
+            $mergeObjects: [
+              '$doc',
+              {
+                originalPrice: '$cheapestVariant.originalPrice',
+                discountPrice: '$cheapestVariant.discountPrice',
+                currentPrice: '$cheapestVariant.currentPrice',
+              },
+            ],
+          },
+        },
+      },
+
+      {
+        $lookup: {
+          from: 'categories',
+          localField: 'categoryId',
+          foreignField: '_id',
+          as: 'categoryId',
+        },
+      },
+      {
+        $unwind: {
+          path: '$categoryId',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+
+      {
+        $lookup: {
+          from: 'suppliers',
+          localField: 'supplierId',
+          foreignField: '_id',
+          as: 'supplierId',
+        },
+      },
+      {
+        $unwind: {
+          path: '$supplierId',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+
+      {
+        $project: {
+          variants: 0,
+          cheapestVariant: 0,
+        },
+      },
+    ]);
+  }
+
+  async findBySupplier(
+    supplierId: string,
+    query: string,
+    current: number,
+    pageSize: number,
+  ) {
+    if (!isValidId(supplierId)) {
+      throw new BadRequestException('Id supplier không hợp lệ');
     }
-    const data = await this.productModel.find({ supplierId: _id });
-    if (!data) {
-      throw new BadRequestException('Lỗi khi lấy dữ liệu product theo shops');
-    }
-    return data;
+
+    return paginationAggregate(this.productModel, query, current, pageSize, [
+      {
+        $match: {
+          supplierId: new Types.ObjectId(supplierId),
+        },
+      },
+      {
+        $lookup: {
+          from: 'variants',
+          localField: '_id',
+          foreignField: 'productId',
+          as: 'variants',
+        },
+      },
+      {
+        $unwind: {
+          path: '$variants',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $sort: {
+          'variants.currentPrice': 1,
+        },
+      },
+      {
+        $group: {
+          _id: '$_id',
+          doc: { $first: '$$ROOT' },
+          cheapestVariant: { $first: '$variants' },
+        },
+      },
+      {
+        $replaceRoot: {
+          newRoot: {
+            $mergeObjects: [
+              '$doc',
+              {
+                originalPrice: '$cheapestVariant.originalPrice',
+                discountPrice: '$cheapestVariant.discountPrice',
+                currentPrice: '$cheapestVariant.currentPrice',
+              },
+            ],
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: 'categories',
+          localField: 'categoryId',
+          foreignField: '_id',
+          as: 'categoryId',
+        },
+      },
+      {
+        $unwind: {
+          path: '$categoryId',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $project: {
+          variants: 0,
+          cheapestVariant: 0,
+        },
+      },
+    ]);
   }
 
   async findByCategoryId(

@@ -69,6 +69,51 @@ export async function pagination(
   };
 }
 
+export async function paginationAggregate(
+  model: Model<any>,
+  query: string,
+  current = 1,
+  pageSize = 10,
+  aggregatePipeline: any[] = [],
+) {
+  const { filter, sort } = aqp(query);
+
+  if (filter.current) delete filter.current;
+  if (filter.pageSize) delete filter.pageSize;
+
+  const skip = (current - 1) * pageSize;
+
+  // COUNT
+  const totalItemsAgg = await model.aggregate([
+    { $match: filter },
+    { $count: 'total' },
+  ]);
+
+  const totalItems = totalItemsAgg[0]?.total || 0;
+  const totalPages = Math.ceil(totalItems / pageSize);
+
+  // DATA
+  const result = await model.aggregate([
+    { $match: filter },
+
+    ...aggregatePipeline,
+
+    { $sort: sort || { createdAt: -1 } },
+    { $skip: skip },
+    { $limit: pageSize },
+  ]);
+
+  return {
+    meta: {
+      current,
+      pageSize,
+      pages: totalPages,
+      total: totalItems,
+    },
+    result,
+  };
+}
+
 export async function CheckRole(roleModel: Model<Role>, _id: string) {
   const customerRole = await roleModel.findOne({ _id });
   if (customerRole?.name !== RoleEnum.CUSTOMER) {

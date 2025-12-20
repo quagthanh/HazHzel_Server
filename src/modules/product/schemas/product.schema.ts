@@ -38,11 +38,13 @@ export class Product {
 
   @Prop({
     type: Boolean,
+    default: false,
   })
   isSale: boolean;
 
   @Prop({
     type: Boolean,
+    default: false,
   })
   isHot: boolean;
 }

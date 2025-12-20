@@ -15,7 +15,7 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { RemoveImage } from './dto/remove-image.dto';
-import { ResponseMessage } from '@/shared/decorators/customize';
+import { Public, ResponseMessage } from '@/shared/decorators/customize';
 
 @Controller('products')
 export class ProductController {
@@ -30,7 +30,20 @@ export class ProductController {
   ) {
     return this.productService.create(createProductDto, files);
   }
-
+  @Get('/admin')
+  @ResponseMessage('Fetched all products successfull')
+  findAllForAdmin(
+    @Query() query: string,
+    @Query('current') current: string,
+    @Query('pageSize') pageSize: string,
+  ) {
+    return this.productService.findAllForAdmin(
+      query,
+      Number(current) || 1,
+      Number(pageSize) || 10,
+    );
+  }
+  @Public()
   @Get()
   @ResponseMessage('Fetched all products successfull')
   findAll(
@@ -38,12 +51,27 @@ export class ProductController {
     @Query('current') current: string,
     @Query('pageSize') pageSize: string,
   ) {
-    return this.productService.findAll(query, +current, +pageSize);
+    return this.productService.findAll(
+      query,
+      Number(current) || 1,
+      Number(pageSize) || 10,
+    );
   }
 
-  @Get('/shop/:id')
-  findByShopId(@Param('id') _id: string) {
-    return this.productService.findByShopId(_id);
+  @Get('/by-supplier/:supplierId')
+  @ResponseMessage('Fetched products by supplier successful')
+  findBySupplier(
+    @Param('supplierId') supplierId: string,
+    @Query() query: string,
+    @Query('current') current?: number,
+    @Query('pageSize') pageSize?: number,
+  ) {
+    return this.productService.findBySupplier(
+      supplierId,
+      query,
+      Number(current) || 1,
+      Number(pageSize) || 10,
+    );
   }
 
   @Get(':slug')

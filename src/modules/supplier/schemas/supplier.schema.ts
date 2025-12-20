@@ -1,5 +1,7 @@
 import { Address } from '@/modules/address/schemas/address.schema';
 import { Variant } from '@/modules/variant/schemas/variant.schema';
+import { statusSupplier } from '@/shared/enums/statusSupplier.enum';
+import { SupplierImage } from '@/shared/interfaces/supplier-image';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 
@@ -19,13 +21,16 @@ export class Supplier {
   @Prop({ type: String })
   phone: string;
 
+  @Prop({ type: [Object], default: [] })
+  images: SupplierImage[];
+
   @Prop({ type: Object })
-  address: Address;
+  address: any;
 
   @Prop({ type: String })
   description: string;
 
-  @Prop({ type: String, enum: ['active', 'inactive'], default: 'active' })
+  @Prop({ type: String, enum: statusSupplier, default: statusSupplier.ACTIVE })
   status: string;
 }
 

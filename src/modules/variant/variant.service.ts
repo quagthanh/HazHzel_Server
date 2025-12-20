@@ -10,8 +10,9 @@ import { isValidId } from '@/shared/helpers/utils';
 import { InjectModel } from '@nestjs/mongoose';
 import { Variant } from './schemas/variant.schema';
 import { Product } from '../product/schemas/product.schema';
-import { Model } from 'mongoose';
+import mongoose, { Model, Types } from 'mongoose';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import { isObject } from 'class-validator';
 @Injectable()
 export class VariantService {
   constructor(
@@ -19,7 +20,6 @@ export class VariantService {
     @InjectModel(Product.name) private productModel: Model<Product>,
     private cloudinaryService: CloudinaryService,
   ) {}
-
   async create(dto: CreateVariantDto, files: Express.Multer.File[]) {
     const { productId } = dto;
 
@@ -39,10 +39,15 @@ export class VariantService {
       }));
     }
 
-    return this.variantModel.create({
+    const objectIdProduct = new Types.ObjectId(productId);
+
+    const newVariant = new this.variantModel({
       ...dto,
+      productId: objectIdProduct,
       images,
     });
+
+    return await newVariant.save();
   }
 
   async findByProduct(productId: string) {
