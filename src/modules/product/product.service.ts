@@ -17,12 +17,19 @@ import {
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { RemoveImage } from './dto/remove-image.dto';
 import slugify from 'slugify';
+import { Supplier } from '../supplier/schemas/supplier.schema';
+import { SupplierService } from '../supplier/supplier.service';
+import { CategoryService } from '../category/category.service';
+import { CollectionService } from '../collection/collection.service';
 
 @Injectable()
 export class ProductService {
   constructor(
     @InjectModel(Product.name) private readonly productModel: Model<Product>,
     private readonly cloudinaryService: CloudinaryService,
+    private readonly supplierService: SupplierService,
+    private readonly categoryService: CategoryService,
+    private readonly collectionService: CollectionService,
   ) {}
 
   private checkSlugExist = async (slug: string): Promise<boolean> => {
@@ -162,14 +169,12 @@ export class ProductService {
   }
 
   async findBySupplier(
-    supplierId: string,
+    supplierSlug: string,
     query: string,
     current: number,
     pageSize: number,
   ) {
-    if (!isValidId(supplierId)) {
-      throw new BadRequestException('Id supplier không hợp lệ');
-    }
+    const supplierId = await this.supplierService.findIdBySlug(supplierSlug);
 
     return paginationAggregate(this.productModel, query, current, pageSize, [
       {
@@ -239,44 +244,173 @@ export class ProductService {
       },
     ]);
   }
-
-  async findByCategoryId(
+  async findByCategory(
+    categorySlug: string,
     query: string,
-    categoryId: string,
     current: number,
     pageSize: number,
   ) {
-    const { filter, sort, projection } = aqp(query);
-    console.log('check filter', filter);
-    if (!current) current = 1;
-    if (!pageSize) pageSize = 5;
+    const categoryId = await this.categoryService.findIdBySlug(categorySlug);
 
-    if (filter.current) delete filter.current;
-    if (filter.pageSize) delete filter.pageSize;
-    if (!isValidId(categoryId)) {
-      throw new BadRequestException('Id category không hợp lệ');
-    }
-
-    const totalItems = await this.productModel.countDocuments({ categoryId });
-    const totalPages = Math.ceil(totalItems / pageSize);
-
-    const skip = (current - 1) * pageSize;
-
-    const result = await this.productModel
-      .find({ categoryId })
-      .skip(skip)
-      .limit(pageSize)
-      .populate(['supplierId', { path: 'categoryId' }]);
-
-    return {
-      meta: {
-        current: current,
-        pageSize: pageSize,
-        pages: totalPages,
-        total: totalItems,
+    return paginationAggregate(this.productModel, query, current, pageSize, [
+      {
+        $match: {
+          categoryId: new Types.ObjectId(categoryId),
+        },
       },
-      result,
-    };
+      {
+        $lookup: {
+          from: 'variants',
+          localField: '_id',
+          foreignField: 'productId',
+          as: 'variants',
+        },
+      },
+      {
+        $unwind: {
+          path: '$variants',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $sort: {
+          'variants.currentPrice': 1,
+        },
+      },
+      {
+        $group: {
+          _id: '$_id',
+          doc: { $first: '$$ROOT' },
+          cheapestVariant: { $first: '$variants' },
+        },
+      },
+      {
+        $replaceRoot: {
+          newRoot: {
+            $mergeObjects: [
+              '$doc',
+              {
+                originalPrice: '$cheapestVariant.originalPrice',
+                discountPrice: '$cheapestVariant.discountPrice',
+                currentPrice: '$cheapestVariant.currentPrice',
+              },
+            ],
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: 'categories',
+          localField: 'categoryId',
+          foreignField: '_id',
+          as: 'categoryId',
+        },
+      },
+      {
+        $unwind: {
+          path: '$categoryId',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $project: {
+          variants: 0,
+          cheapestVariant: 0,
+        },
+      },
+    ]);
+  }
+  async findByCollection(
+    collectionSlug: string,
+    query: string,
+    current: number,
+    pageSize: number,
+  ) {
+    // Bước 1: Tìm _id của Collection dựa vào slug
+    const collectionId =
+      await this.collectionService.findIdBySlug(collectionSlug);
+
+    // Bước 2: Chạy Pipeline
+    return paginationAggregate(this.productModel, query, current, pageSize, [
+      // A. Lọc sản phẩm thuộc Collection này
+      {
+        $match: {
+          collectionId: new Types.ObjectId(collectionId),
+        },
+      },
+
+      // B. (GIỮ NGUYÊN) Join với Variants để lấy giá
+      {
+        $lookup: {
+          from: 'variants',
+          localField: '_id',
+          foreignField: 'productId',
+          as: 'variants',
+        },
+      },
+      {
+        $unwind: {
+          path: '$variants',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+
+      // C. (GIỮ NGUYÊN) Sắp xếp để lấy biến thể giá rẻ nhất lên đầu nhóm
+      {
+        $sort: {
+          'variants.currentPrice': 1,
+        },
+      },
+
+      // D. (GIỮ NGUYÊN) Group lại thành 1 sản phẩm
+      {
+        $group: {
+          _id: '$_id',
+          doc: { $first: '$$ROOT' },
+          cheapestVariant: { $first: '$variants' },
+        },
+      },
+
+      // E. (GIỮ NGUYÊN) Làm phẳng dữ liệu và gán giá hiển thị
+      {
+        $replaceRoot: {
+          newRoot: {
+            $mergeObjects: [
+              '$doc',
+              {
+                originalPrice: '$cheapestVariant.originalPrice',
+                discountPrice: '$cheapestVariant.discountPrice',
+                currentPrice: '$cheapestVariant.currentPrice',
+              },
+            ],
+          },
+        },
+      },
+
+      // F. (QUAN TRỌNG) Vẫn Join với Category để hiển thị thẻ loại sản phẩm (Category Tag) ở Product Card
+      {
+        $lookup: {
+          from: 'categories',
+          localField: 'categoryId',
+          foreignField: '_id',
+          as: 'categoryId',
+        },
+      },
+      {
+        $unwind: {
+          path: '$categoryId',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+
+      // G. Cleanup dữ liệu thừa
+      {
+        $project: {
+          variants: 0,
+          cheapestVariant: 0,
+        },
+      },
+    ]);
   }
   async findByProductSlug(slug: string) {
     const data = (await this.productModel.findOne({ slug: slug })).populate([

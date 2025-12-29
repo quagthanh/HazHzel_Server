@@ -1,50 +1,53 @@
-import { Address } from '@/modules/address/schemas/address.schema';
+import {
+  Address,
+  AddressSchema,
+} from '@/modules/address/schemas/address.schema';
 import { Discount } from '@/modules/discount/schemas/discount.schema';
-import { OrderItem } from '@/modules/order-item/schemas/order-item.schema';
-import { Payment } from '@/modules/payment/schemas/payment.schema';
+import {
+  Payment,
+  PaymentSchema,
+} from '@/modules/payment/schemas/payment.schema';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import mongoose, { HydratedDocument, Types } from 'mongoose';
+import { OrderItem, OrderItemSchema } from './order-item.schema';
+import { OrderDiscount, OrderDiscountSchema } from './order-discount.schema';
+import { statusOrderEnum } from '@/shared/enums/statusOrder.enum';
+import { stat } from 'fs';
 
 export type OrderDocument = HydratedDocument<Order>;
 
 @Schema({ timestamps: true })
 export class Order {
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })
   userId: Types.ObjectId;
 
-  @Prop({ type: [Object], default: [] })
+  @Prop({ type: [OrderItemSchema], default: [] })
   items: OrderItem[];
 
-  @Prop({ type: Number, required: true })
-  totalAmount: number;
+  @Prop({ required: true })
+  subTotal: number;
 
-  @Prop({ type: Object })
+  @Prop({ required: true })
+  totalPrice: number;
+
+  @Prop({ type: AddressSchema, required: true })
   shippingAddress: Address;
 
   @Prop({ type: Number, default: 0 })
   shippingCost: number;
 
-  @Prop({ type: Object })
-  discount: Discount;
+  @Prop({ type: OrderDiscountSchema })
+  discount: OrderDiscount;
 
   @Prop({
     type: String,
-    enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled'],
-    default: 'pending',
+    enum: statusOrderEnum,
+    default: statusOrderEnum.PENDING,
   })
-  status: string;
+  status: statusOrderEnum;
 
-  @Prop({ type: Object })
+  @Prop({ type: PaymentSchema })
   payment: Payment;
-
-  @Prop({ type: Date })
-  createdAt: Date;
-
-  @Prop({ type: Date })
-  updatedAt: Date;
-
-  @Prop({ type: Date })
-  deliveredAt: Date;
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);

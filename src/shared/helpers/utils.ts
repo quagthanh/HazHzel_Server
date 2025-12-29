@@ -83,21 +83,18 @@ export async function paginationAggregate(
 
   const skip = (current - 1) * pageSize;
 
-  // COUNT
   const totalItemsAgg = await model.aggregate([
     { $match: filter },
+    ...aggregatePipeline,
     { $count: 'total' },
   ]);
 
   const totalItems = totalItemsAgg[0]?.total || 0;
   const totalPages = Math.ceil(totalItems / pageSize);
 
-  // DATA
   const result = await model.aggregate([
     { $match: filter },
-
     ...aggregatePipeline,
-
     { $sort: sort || { createdAt: -1 } },
     { $skip: skip },
     { $limit: pageSize },

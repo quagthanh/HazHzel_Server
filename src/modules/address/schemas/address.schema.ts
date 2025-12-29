@@ -10,19 +10,22 @@ export class Address {
   name: string;
 
   @Prop({ required: true })
-  phone: string;
+  street: string;
+
+  @Prop({ required: false })
+  ward: string;
 
   @Prop({ required: true })
   city: string;
 
   @Prop({ required: true })
-  district: string;
+  country: string;
 
   @Prop({ required: true })
-  ward: string;
+  zipCode: string;
 
   @Prop({ required: true })
-  houseNumber: string;
+  phone: string;
 
   @Prop({ type: String, enum: TypeAddress, default: TypeAddress.HOMEADDRESS })
   typeAddress: TypeAddress;

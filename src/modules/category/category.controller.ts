@@ -7,23 +7,27 @@ import {
   Param,
   Delete,
   Query,
+  UseInterceptors,
+  UploadedFiles,
 } from '@nestjs/common';
 import { CategoryService } from './category.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
-import { Public, ResponseMessage } from '@/shared/decorators/customize';
-import { Roles } from '@/shared/decorators/role.decorator';
-import { RoleEnum } from '@/shared/enums/role.enum';
+import { ResponseMessage } from '@/shared/decorators/customize';
+import { FilesInterceptor } from '@nestjs/platform-express';
 
-@Controller('category')
+@Controller('categories')
 export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
 
-  @Roles(RoleEnum.ADMIN, RoleEnum.SYSTEM_ADMIN)
   @ResponseMessage('Category created successfully')
   @Post()
-  create(@Body() createCategoryDto: CreateCategoryDto) {
-    return this.categoryService.create(createCategoryDto);
+  @UseInterceptors(FilesInterceptor('files'))
+  create(
+    @Body() createCategoryDto: CreateCategoryDto,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    return this.categoryService.create(createCategoryDto, files);
   }
 
   @Get()

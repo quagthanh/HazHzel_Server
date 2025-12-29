@@ -19,6 +19,16 @@ import { Cloudinary } from './modules/cloudinary/entities/cloudinary.entity';
 import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { VariantModule } from './modules/variant/variant.module';
+import { CollectionModule } from './modules/collection/collection.module';
+import { TitleAggregationModule } from './modules/title-aggregation/title-aggregation.module';
+import { PaymentModule } from './modules/payment/payment.module';
+import { AddressModule } from './modules/address/address.module';
+import { Discount } from './modules/discount/schemas/discount.schema';
+import { DiscountModule } from './modules/discount/discount.module';
+import { CartModule } from './modules/cart/cart.module';
+import { CartItemModule } from './modules/cart-item/cart-item.module';
+import { Order } from './modules/order/schemas/order.schema';
+import { OrderModule } from './modules/order/order.module';
 
 @Module({
   imports: [
@@ -67,6 +77,14 @@ import { VariantModule } from './modules/variant/variant.module';
     CloudinaryModule,
     AdminModule,
     VariantModule,
+    CollectionModule,
+    TitleAggregationModule,
+    PaymentModule,
+    AddressModule,
+    DiscountModule,
+    CartModule,
+    CartItemModule,
+    OrderModule,
   ],
   controllers: [AppController],
   providers: [

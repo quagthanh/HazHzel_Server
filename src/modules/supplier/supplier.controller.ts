@@ -65,13 +65,18 @@ export class SupplierController {
     return this.supplierService.findOne(id);
   }
 
-  @Get('/detail/top')
+  @Get('/top/3')
   @Public()
   @ResponseMessage('Fetched top 3 suppliers successfully')
   getTopSuppliers() {
     return this.supplierService.getTop3SuppliersByProductViews();
   }
-
+  @Get('/by-detail/:slug')
+  @Public()
+  @ResponseMessage('Get supplier detail by slug')
+  async getSupplierBySlug(@Param('slug') slug: string) {
+    return this.supplierService.findIdBySlug(slug);
+  }
   @Patch(':id')
   @ResponseMessage('Update supplier successful')
   @UseInterceptors(FilesInterceptor('files'))

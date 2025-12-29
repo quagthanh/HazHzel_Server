@@ -15,6 +15,9 @@ export class Supplier {
   @Prop({ type: String })
   contactName: string;
 
+  @Prop({ type: String, unique: true })
+  slug: string;
+
   @Prop({ type: String })
   email: string;
 

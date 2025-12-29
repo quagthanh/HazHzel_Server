@@ -1,3 +1,4 @@
+import { DiscountType } from '@/shared/enums/typeDiscount.enum';
 import { statusDiscount } from '@/shared/enums/statusDiscount.enum';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
@@ -6,26 +7,20 @@ export type DiscountDocument = HydratedDocument<Discount>;
 
 @Schema({ timestamps: true })
 export class Discount {
-  @Prop({ type: String, required: true })
+  @Prop({ type: String, required: true, unique: true, uppercase: true })
   code: string;
 
   @Prop({ type: String })
   description: string;
 
-  @Prop({ type: String, enum: ['percentage', 'fixed'], required: true })
-  discountType: string;
+  @Prop({ type: String, enum: DiscountType, default: DiscountType.FIXED })
+  type: DiscountType;
 
   @Prop({ type: Number, required: true })
-  discountValue: number;
+  value: number;
 
-  @Prop({ type: Number, default: 0 })
-  minOrderValue: number;
-
-  @Prop({ type: Number, default: 0 })
+  @Prop({ type: Number, default: 10 })
   maxUses: number;
-
-  @Prop({ type: Number, default: 0 })
-  usedCount: number;
 
   @Prop({ type: Date })
   startDate: Date;
@@ -38,7 +33,7 @@ export class Discount {
     enum: statusDiscount,
     default: statusDiscount.ACTIVE,
   })
-  status: string;
+  status: statusDiscount;
 }
 
 export const DiscountSchema = SchemaFactory.createForClass(Discount);

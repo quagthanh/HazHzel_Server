@@ -1,3 +1,4 @@
+import { CategoryImage } from '@/shared/interfaces/category-image';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 
@@ -13,6 +14,9 @@ export class Category {
 
   @Prop({ type: Boolean, default: true })
   isActive: boolean;
+
+  @Prop({ type: [Object], default: [] })
+  images: CategoryImage[];
 }
 
 export const CategorySchema = SchemaFactory.createForClass(Category);

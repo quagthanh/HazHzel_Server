@@ -7,10 +7,11 @@ import { CreateSupplierDto } from './dto/create-supplier.dto';
 import { UpdateSupplierDto } from './dto/update-supplier.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Supplier } from './schemas/supplier.schema';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { isValidId, pagination } from '@/shared/helpers/utils';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { Product } from '../product/schemas/product.schema';
+import slugify from 'slugify';
 
 @Injectable()
 export class SupplierService {
@@ -20,11 +21,33 @@ export class SupplierService {
     @InjectModel(Product.name)
     private readonly productModel: Model<Product>,
   ) {}
+
+  private checkSlugExist = async (slug: string): Promise<boolean> => {
+    const isSlugExist = await this.supplierModel.exists({ slug });
+    return !!isSlugExist;
+  };
+  private generateSlugUnique = async (text: string): Promise<string> => {
+    let baseSlug = slugify(text, {
+      replacement: '-',
+      trim: true,
+      lower: true,
+      locale: 'vi',
+    });
+    let slug = baseSlug;
+    let count = 1;
+    while (await this.checkSlugExist(slug)) {
+      slug = `${baseSlug}-${count++}`;
+    }
+
+    return slug;
+  };
   async create(
     createSupplierDto: CreateSupplierDto,
     files: Express.Multer.File[] = [],
   ) {
-    const { ...otherFields } = createSupplierDto;
+    const { name, ...otherFields } = createSupplierDto;
+    const slug = await this.generateSlugUnique(name);
+
     if (!files || files.length === 0) {
       throw new BadRequestException('Hãy chọn ít nhất 1 hình');
     }
@@ -37,7 +60,9 @@ export class SupplierService {
     }));
 
     const newSupplier = await this.supplierModel.create({
+      name,
       images: simplifiedImages,
+      slug,
       ...otherFields,
     });
 
@@ -62,6 +87,18 @@ export class SupplierService {
     }
 
     return supplier;
+  }
+  async findIdBySlug(slug: string): Promise<Types.ObjectId> {
+    const supplier = await this.supplierModel
+      .findOne({ slug })
+      .select('_id')
+      .exec();
+
+    if (!supplier) {
+      throw new NotFoundException(`Supplier với slug "${slug}" không tồn tại.`);
+    }
+
+    return supplier._id;
   }
   async getTop3SuppliersByProductViews() {
     return await this.productModel.aggregate([
@@ -117,6 +154,7 @@ export class SupplierService {
           totalProducts: 1,
           supplier: {
             name: 1,
+            slug: 1,
             images: 1,
             description: 1,
             status: 1,

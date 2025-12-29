@@ -57,17 +57,17 @@ export class ProductController {
       Number(pageSize) || 10,
     );
   }
-
-  @Get('/by-supplier/:supplierId')
+  @Public()
+  @Get('/by-supplier/:supplierSlug')
   @ResponseMessage('Fetched products by supplier successful')
   findBySupplier(
-    @Param('supplierId') supplierId: string,
+    @Param('supplierSlug') supplierSlug: string,
     @Query() query: string,
     @Query('current') current?: number,
     @Query('pageSize') pageSize?: number,
   ) {
     return this.productService.findBySupplier(
-      supplierId,
+      supplierSlug,
       query,
       Number(current) || 1,
       Number(pageSize) || 10,
@@ -78,18 +78,36 @@ export class ProductController {
   findByProductSlug(@Param('slug') slug: string) {
     return this.productService.findByProductSlug(slug);
   }
-  @Get('/by-category/:categoryId')
-  findByCategoryId(
+  @Public()
+  @Get('/by-category/:categorySlug')
+  @ResponseMessage('Fetched products by category successful')
+  findByCategory(
+    @Param('categorySlug') categorySlug: string,
     @Query() query: string,
-    @Param('categoryId') categoryId: string,
     @Query('current') current?: number,
     @Query('pageSize') pageSize?: number,
   ) {
-    return this.productService.findByCategoryId(
+    return this.productService.findByCategory(
+      categorySlug,
       query,
-      categoryId,
-      Number(current),
-      Number(pageSize),
+      Number(current) || 1,
+      Number(pageSize) || 10,
+    );
+  }
+  @Public()
+  @Get('/by-collection/:collectionSlug')
+  @ResponseMessage('Fetched products by collection successful')
+  findByCollection(
+    @Param('collectionSlug') collectionSlug: string,
+    @Query() query: string,
+    @Query('current') current?: number,
+    @Query('pageSize') pageSize?: number,
+  ) {
+    return this.productService.findByCollection(
+      collectionSlug,
+      query,
+      Number(current) || 1,
+      Number(pageSize) || 10,
     );
   }
   @Patch(':id')
