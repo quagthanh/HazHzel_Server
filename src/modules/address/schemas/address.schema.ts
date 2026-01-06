@@ -15,13 +15,13 @@ export class Address {
   @Prop({ required: false })
   ward: string;
 
-  @Prop({ required: true })
+  @Prop({ required: false })
   city: string;
 
-  @Prop({ required: true })
+  @Prop({ required: false })
   country: string;
 
-  @Prop({ required: true })
+  @Prop({ required: false })
   zipCode: string;
 
   @Prop({ required: true })
@@ -30,7 +30,7 @@ export class Address {
   @Prop({ type: String, enum: TypeAddress, default: TypeAddress.HOMEADDRESS })
   typeAddress: TypeAddress;
 
-  @Prop({ default: true })
+  @Prop({ default: false })
   isDefault: boolean;
 }
 

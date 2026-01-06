@@ -73,7 +73,37 @@ export class ProductController {
       Number(pageSize) || 10,
     );
   }
-
+  @Public()
+  @Get('/home-new-brand/:supplierSlug')
+  @ResponseMessage('Fetched products by supplier successful')
+  findHomeNewBrand(
+    @Param('supplierSlug') supplierSlug: string,
+    @Query() query: string,
+    @Query('current') current?: number,
+    @Query('pageSize') pageSize?: number,
+  ) {
+    return this.productService.findHomeNewBrand(
+      supplierSlug,
+      query,
+      Number(current) || 1,
+      Number(pageSize) || 10,
+    );
+  }
+  @Public()
+  @Get('/actions/search')
+  @ResponseMessage('Search products success')
+  searchProducts(@Query('keyword') keyword: string) {
+    console.log('Check query:', keyword);
+    if (!keyword) return [];
+    return this.productService.searchByKeyword(keyword);
+  }
+  @Public()
+  @Get('/actions/top-viewed')
+  @ResponseMessage('Get top viewed products success')
+  getTopViewed() {
+    return this.productService.findTopViewed(10);
+  }
+  @Public()
   @Get(':slug')
   findByProductSlug(@Param('slug') slug: string) {
     return this.productService.findByProductSlug(slug);
@@ -87,6 +117,10 @@ export class ProductController {
     @Query('current') current?: number,
     @Query('pageSize') pageSize?: number,
   ) {
+    console.log('Fetch products by category with params:', {
+      categorySlug,
+      query,
+    });
     return this.productService.findByCategory(
       categorySlug,
       query,
@@ -94,6 +128,7 @@ export class ProductController {
       Number(pageSize) || 10,
     );
   }
+
   @Public()
   @Get('/by-collection/:collectionSlug')
   @ResponseMessage('Fetched products by collection successful')
@@ -110,6 +145,7 @@ export class ProductController {
       Number(pageSize) || 10,
     );
   }
+
   @Patch(':id')
   @UseInterceptors(FilesInterceptor('files'))
   update(

@@ -43,7 +43,13 @@ export class CollectionController {
       Number(pageSize) || 10,
     );
   }
-
+  @Public()
+  @Get('/actions/search')
+  @ResponseMessage('Search collections success')
+  searchCollections(@Query('keyword') keyword: string) {
+    if (!keyword) return [];
+    return this.collectionService.searchByKeyword(keyword);
+  }
   @Public()
   @Get()
   @ResponseMessage('Fetched all collections successful')

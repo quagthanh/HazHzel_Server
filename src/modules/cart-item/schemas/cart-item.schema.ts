@@ -11,6 +11,12 @@ export class CartItem {
     ref: 'Product',
   })
   productId: Types.ObjectId;
+  @Prop({
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+    ref: 'Variant',
+  })
+  variantId: Types.ObjectId;
 
   @Prop({ type: Number, required: true })
   quantity: number;

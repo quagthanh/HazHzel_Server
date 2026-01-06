@@ -6,13 +6,18 @@ import {
 import { CreateVariantDto } from './dto/create-variant.dto';
 import { UpdateVariantDto } from './dto/update-variant.dto';
 import { RemoveImage } from '../product/dto/remove-image.dto';
-import { isValidId } from '@/shared/helpers/utils';
 import { InjectModel } from '@nestjs/mongoose';
 import { Variant } from './schemas/variant.schema';
 import { Product } from '../product/schemas/product.schema';
-import mongoose, { Model, Types } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
-import { isObject } from 'class-validator';
+const generateUniqueKey = (attrs: any[]) => {
+  return attrs
+    .map((a) => ({ k: a.k.toLowerCase(), v: a.v.toLowerCase() }))
+    .sort((a, b) => a.k.localeCompare(b.k))
+    .map((a) => `${a.k}-${a.v}`)
+    .join('-');
+};
 @Injectable()
 export class VariantService {
   constructor(
@@ -20,14 +25,50 @@ export class VariantService {
     @InjectModel(Product.name) private productModel: Model<Product>,
     private cloudinaryService: CloudinaryService,
   ) {}
-  async create(dto: CreateVariantDto, files: Express.Multer.File[]) {
-    const { productId } = dto;
-
+  async create(
+    createVariantDto: CreateVariantDto,
+    files: Express.Multer.File[],
+  ) {
+    let { productId, attributes, originalPrice, currentPrice, sku } =
+      createVariantDto;
+    if (typeof attributes === 'string') {
+      try {
+        attributes = JSON.parse(attributes);
+      } catch (e) {
+        throw new BadRequestException('Format attributes không hợp lệ');
+      }
+    }
     const product = await this.productModel.findById(productId);
     if (!product) {
       throw new BadRequestException('Product không tồn tại');
     }
+    const existingVariants = await this.variantModel.find({ productId }).lean();
 
+    const newVariantKey = generateUniqueKey(attributes);
+
+    const isDuplicateAttribute = existingVariants.some((variant) => {
+      const currentKey = generateUniqueKey(variant.attributes);
+      return currentKey === newVariantKey;
+    });
+
+    if (isDuplicateAttribute) {
+      throw new BadRequestException(
+        `This variant (Attributes: ${newVariantKey}) is exist`,
+      );
+    }
+    if (!sku) {
+      const suffix = newVariantKey;
+      sku = `${product.slug}-${suffix}`.toUpperCase();
+    }
+
+    const duplicateSku = await this.variantModel.findOne({ sku });
+    if (duplicateSku) {
+      throw new BadRequestException(`SKU ${sku} is exist`);
+    }
+    const nameSuffix = Array.isArray(attributes)
+      ? attributes.map((attr: any) => attr.v).join(' - ')
+      : '';
+    const variantName = `${product.name} - ${nameSuffix}`;
     let images = [];
     if (files && files.length > 0) {
       const uploaded = await this.cloudinaryService.uploadMultiFiles(files);
@@ -39,23 +80,21 @@ export class VariantService {
       }));
     }
 
-    const objectIdProduct = new Types.ObjectId(productId);
-
     const newVariant = new this.variantModel({
-      ...dto,
-      productId: objectIdProduct,
+      ...createVariantDto,
+      productId,
+      attributes,
+      name: variantName,
       images,
+      currentPrice: currentPrice || originalPrice,
     });
 
     return await newVariant.save();
   }
 
-  async findByProduct(productId: string) {
-    if (!isValidId(productId)) {
-      throw new BadRequestException('ProductId không hợp lệ');
-    }
-
-    return this.variantModel.find({ productId });
+  async findByProduct(productId: Types.ObjectId) {
+    const variants = await this.variantModel.find({ productId: productId });
+    return variants;
   }
 
   async update(

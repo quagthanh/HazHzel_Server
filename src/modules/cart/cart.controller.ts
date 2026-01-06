@@ -21,7 +21,8 @@ export class CartController {
 
   @Get()
   getCart(@Req() req) {
-    return this.cartService.getCart(req.user);
+    const { user: _id } = req;
+    return this.cartService.getCart(_id);
   }
 
   @Post(':userId')

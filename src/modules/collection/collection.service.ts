@@ -111,17 +111,26 @@ export class CollectionService {
     return collection._id;
   }
 
-  // Logic Top 3 này giả định Product có trường `collectionId`
+  async searchByKeyword(keyword: string) {
+    const regex = new RegExp(keyword, 'i');
+
+    const collections = await this.collectionModel
+      .find({
+        name: { $regex: regex },
+      })
+      .select('name slug image')
+      .limit(5)
+      .lean();
+    return collections;
+  }
   async getTop3CollectionsByProductViews() {
     return await this.productModel.aggregate([
-      // 1. Chỉ lấy product có thuộc collection
       {
         $match: {
-          collectionId: { $exists: true }, // Cần update Schema Product thêm field này
+          collectionId: { $exists: true },
         },
       },
 
-      // 2. Group theo collection
       {
         $group: {
           _id: '$collectionId',
@@ -130,15 +139,13 @@ export class CollectionService {
         },
       },
 
-      // 3. Sort theo views
       {
         $sort: { totalViews: -1 },
       },
 
-      // 4. Join collection
       {
         $lookup: {
-          from: 'collections', // Tên collection trong DB (thường là số nhiều lowercase)
+          from: 'collections',
           localField: '_id',
           foreignField: '_id',
           as: 'collection',
@@ -147,17 +154,14 @@ export class CollectionService {
 
       { $unwind: '$collection' },
 
-      // 5. Chỉ lấy collection ACTIVE
       {
         $match: {
           'collection.status': 'ACTIVE',
         },
       },
 
-      // 6. Limit top 3
       { $limit: 3 },
 
-      // 7. Format response
       {
         $project: {
           _id: 0,

@@ -7,9 +7,11 @@ import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 import { SupplierModule } from '../supplier/supplier.module';
 import { CategoryModule } from '../category/category.module';
 import { CollectionModule } from '../collection/collection.module';
+import { VariantModule } from '../variant/variant.module';
 
 @Module({
   imports: [
+    forwardRef(() => VariantModule),
     forwardRef(() => SupplierModule),
     forwardRef(() => CollectionModule),
     CategoryModule,

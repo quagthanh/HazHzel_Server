@@ -5,7 +5,7 @@ import { HydratedDocument, Types } from 'mongoose';
 
 export type PaymentDocument = HydratedDocument<Payment>;
 
-@Schema({ timestamps: true })
+@Schema({ timestamps: false, _id: false })
 export class Payment {
   @Prop({
     type: String,

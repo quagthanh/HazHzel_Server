@@ -17,10 +17,11 @@ import {
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { RemoveImage } from './dto/remove-image.dto';
 import slugify from 'slugify';
-import { Supplier } from '../supplier/schemas/supplier.schema';
 import { SupplierService } from '../supplier/supplier.service';
 import { CategoryService } from '../category/category.service';
 import { CollectionService } from '../collection/collection.service';
+import { GenderType } from '@/shared/enums/typeGenderProduct.enm';
+import { VariantService } from '../variant/variant.service';
 
 @Injectable()
 export class ProductService {
@@ -30,6 +31,7 @@ export class ProductService {
     private readonly supplierService: SupplierService,
     private readonly categoryService: CategoryService,
     private readonly collectionService: CollectionService,
+    private readonly variantService: VariantService,
   ) {}
 
   private checkSlugExist = async (slug: string): Promise<boolean> => {
@@ -85,7 +87,31 @@ export class ProductService {
     ]);
   }
   async findAll(query: string, current: number, pageSize: number) {
-    return paginationAggregate(this.productModel, query, current, pageSize, [
+    const queryParams = new URLSearchParams(query);
+    const gender = queryParams.get('gender');
+
+    const customMatchStage: any = {};
+
+    if (gender) {
+      if (gender === GenderType.MEN) {
+        customMatchStage.gender = { $in: [GenderType.MEN, GenderType.UNISEX] };
+      } else if (gender === GenderType.WOMEN) {
+        customMatchStage.gender = {
+          $in: [GenderType.WOMEN, GenderType.UNISEX],
+        };
+      } else {
+        customMatchStage.gender = gender;
+      }
+
+      queryParams.delete('gender');
+    }
+    const cleanQuery = queryParams.toString();
+
+    const pipeline = [
+      ...(Object.keys(customMatchStage).length > 0
+        ? [{ $match: customMatchStage }]
+        : []),
+
       {
         $lookup: {
           from: 'variants',
@@ -105,7 +131,6 @@ export class ProductService {
           'variants.currentPrice': 1,
         },
       },
-
       {
         $group: {
           _id: '$_id',
@@ -113,7 +138,6 @@ export class ProductService {
           cheapestVariant: { $first: '$variants' },
         },
       },
-
       {
         $replaceRoot: {
           newRoot: {
@@ -128,47 +152,156 @@ export class ProductService {
           },
         },
       },
-
-      {
-        $lookup: {
-          from: 'categories',
-          localField: 'categoryId',
-          foreignField: '_id',
-          as: 'categoryId',
-        },
-      },
-      {
-        $unwind: {
-          path: '$categoryId',
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-
-      {
-        $lookup: {
-          from: 'suppliers',
-          localField: 'supplierId',
-          foreignField: '_id',
-          as: 'supplierId',
-        },
-      },
-      {
-        $unwind: {
-          path: '$supplierId',
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-
       {
         $project: {
           variants: 0,
-          cheapestVariant: 0,
         },
       },
-    ]);
-  }
+    ];
 
+    return paginationAggregate(
+      this.productModel,
+      cleanQuery,
+      current,
+      pageSize,
+      pipeline,
+    );
+  }
   async findBySupplier(
+    supplierSlug: string,
+    query: string,
+    current: number,
+    pageSize: number,
+  ) {
+    const supplierId = await this.supplierService.findIdBySlug(supplierSlug);
+
+    const queryParams = new URLSearchParams(query);
+    const categorySlug = queryParams.get('category');
+    const size = queryParams.get('size');
+    const minPrice = queryParams.get('minPrice');
+    const maxPrice = queryParams.get('maxPrice');
+    const sort = queryParams.get('sort');
+
+    const productMatchStage: any = {
+      supplierId: new Types.ObjectId(supplierId),
+    };
+
+    if (categorySlug) {
+      const categoryId = await this.categoryService.findIdBySlug(categorySlug);
+      if (categoryId) {
+        productMatchStage.categoryId = new Types.ObjectId(categoryId);
+      }
+    }
+
+    const variantMatchStage: any = {};
+
+    if (minPrice || maxPrice) {
+      variantMatchStage['variants.currentPrice'] = {};
+      if (minPrice)
+        variantMatchStage['variants.currentPrice'].$gte = Number(minPrice);
+      if (maxPrice)
+        variantMatchStage['variants.currentPrice'].$lte = Number(maxPrice);
+    }
+
+    if (size) {
+      variantMatchStage['variants.attributes'] = {
+        $elemMatch: { k: 'Size', v: size },
+      };
+    }
+
+    let sortStage: any = { 'variants.currentPrice': 1 };
+    if (sort) {
+      if (sort === 'price-desc') sortStage = { 'variants.currentPrice': -1 };
+      else if (sort === 'price-asc') sortStage = { 'variants.currentPrice': 1 };
+    }
+
+    queryParams.delete('category');
+    queryParams.delete('size');
+    queryParams.delete('minPrice');
+    queryParams.delete('maxPrice');
+    queryParams.delete('sort');
+    queryParams.delete('inStock');
+
+    const cleanQuery = queryParams.toString();
+
+    return paginationAggregate(
+      this.productModel,
+      cleanQuery,
+      current,
+      pageSize,
+      [
+        {
+          $match: productMatchStage,
+        },
+        {
+          $lookup: {
+            from: 'variants',
+            localField: '_id',
+            foreignField: 'productId',
+            as: 'variants',
+          },
+        },
+        {
+          $unwind: {
+            path: '$variants',
+            preserveNullAndEmptyArrays: false,
+          },
+        },
+        ...(Object.keys(variantMatchStage).length > 0
+          ? [{ $match: variantMatchStage }]
+          : []),
+
+        {
+          $sort: sortStage,
+        },
+
+        {
+          $group: {
+            _id: '$_id',
+            doc: { $first: '$$ROOT' },
+            cheapestVariant: { $first: '$variants' },
+          },
+        },
+
+        {
+          $replaceRoot: {
+            newRoot: {
+              $mergeObjects: [
+                '$doc',
+                {
+                  originalPrice: '$cheapestVariant.originalPrice',
+                  discountPrice: '$cheapestVariant.discountPrice',
+                  currentPrice: '$cheapestVariant.currentPrice',
+                },
+              ],
+            },
+          },
+        },
+
+        {
+          $lookup: {
+            from: 'categories',
+            localField: 'categoryId',
+            foreignField: '_id',
+            as: 'categoryId',
+          },
+        },
+        {
+          $unwind: {
+            path: '$categoryId',
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+
+        {
+          $project: {
+            variants: 0,
+          },
+        },
+      ],
+    );
+  }
+  async findHomeNewBrand(
     supplierSlug: string,
     query: string,
     current: number,
@@ -222,24 +355,10 @@ export class ProductService {
           },
         },
       },
-      {
-        $lookup: {
-          from: 'categories',
-          localField: 'categoryId',
-          foreignField: '_id',
-          as: 'categoryId',
-        },
-      },
-      {
-        $unwind: {
-          path: '$categoryId',
-          preserveNullAndEmptyArrays: true,
-        },
-      },
+
       {
         $project: {
           variants: 0,
-          cheapestVariant: 0,
         },
       },
     ]);
@@ -252,73 +371,133 @@ export class ProductService {
   ) {
     const categoryId = await this.categoryService.findIdBySlug(categorySlug);
 
-    return paginationAggregate(this.productModel, query, current, pageSize, [
-      {
-        $match: {
-          categoryId: new Types.ObjectId(categoryId),
+    const queryParams = new URLSearchParams(query);
+    const size = queryParams.get('size');
+    const minPrice = queryParams.get('minPrice');
+    const maxPrice = queryParams.get('maxPrice');
+    const sort = queryParams.get('sort');
+    const brandSlug = queryParams.get('brand');
+
+    const productMatchStage: any = {
+      categoryId: new Types.ObjectId(categoryId),
+    };
+
+    if (brandSlug) {
+      const supplierId = await this.supplierService.findIdBySlug(brandSlug);
+      if (supplierId) {
+        productMatchStage.supplierId = new Types.ObjectId(supplierId);
+      }
+    }
+
+    const variantMatchStage: any = {};
+
+    if (minPrice || maxPrice) {
+      variantMatchStage['variants.currentPrice'] = {};
+      if (minPrice)
+        variantMatchStage['variants.currentPrice'].$gte = Number(minPrice);
+      if (maxPrice)
+        variantMatchStage['variants.currentPrice'].$lte = Number(maxPrice);
+    }
+
+    if (size) {
+      variantMatchStage['variants.attributes'] = {
+        $elemMatch: { k: 'Size', v: size },
+      };
+    }
+
+    let sortStage: any = { 'variants.currentPrice': 1 };
+    if (sort) {
+      if (sort === 'price-desc') sortStage = { 'variants.currentPrice': -1 };
+      else if (sort === 'price-asc') sortStage = { 'variants.currentPrice': 1 };
+    }
+
+    queryParams.delete('size');
+    queryParams.delete('minPrice');
+    queryParams.delete('maxPrice');
+    queryParams.delete('sort');
+    queryParams.delete('brand');
+
+    const cleanQuery = queryParams.toString();
+
+    return paginationAggregate(
+      this.productModel,
+      cleanQuery,
+      current,
+      pageSize,
+      [
+        {
+          $match: productMatchStage,
         },
-      },
-      {
-        $lookup: {
-          from: 'variants',
-          localField: '_id',
-          foreignField: 'productId',
-          as: 'variants',
-        },
-      },
-      {
-        $unwind: {
-          path: '$variants',
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      {
-        $sort: {
-          'variants.currentPrice': 1,
-        },
-      },
-      {
-        $group: {
-          _id: '$_id',
-          doc: { $first: '$$ROOT' },
-          cheapestVariant: { $first: '$variants' },
-        },
-      },
-      {
-        $replaceRoot: {
-          newRoot: {
-            $mergeObjects: [
-              '$doc',
-              {
-                originalPrice: '$cheapestVariant.originalPrice',
-                discountPrice: '$cheapestVariant.discountPrice',
-                currentPrice: '$cheapestVariant.currentPrice',
-              },
-            ],
+
+        {
+          $lookup: {
+            from: 'variants',
+            localField: '_id',
+            foreignField: 'productId',
+            as: 'variants',
           },
         },
-      },
-      {
-        $lookup: {
-          from: 'categories',
-          localField: 'categoryId',
-          foreignField: '_id',
-          as: 'categoryId',
+
+        {
+          $unwind: {
+            path: '$variants',
+            preserveNullAndEmptyArrays: false,
+          },
         },
-      },
-      {
-        $unwind: {
-          path: '$categoryId',
-          preserveNullAndEmptyArrays: true,
+
+        ...(Object.keys(variantMatchStage).length > 0
+          ? [{ $match: variantMatchStage }]
+          : []),
+
+        {
+          $sort: sortStage,
         },
-      },
-      {
-        $project: {
-          variants: 0,
-          cheapestVariant: 0,
+
+        {
+          $group: {
+            _id: '$_id',
+            doc: { $first: '$$ROOT' },
+            cheapestVariant: { $first: '$variants' },
+          },
         },
-      },
-    ]);
+
+        {
+          $replaceRoot: {
+            newRoot: {
+              $mergeObjects: [
+                '$doc',
+                {
+                  originalPrice: '$cheapestVariant.originalPrice',
+                  discountPrice: '$cheapestVariant.discountPrice',
+                  currentPrice: '$cheapestVariant.currentPrice',
+                },
+              ],
+            },
+          },
+        },
+
+        {
+          $lookup: {
+            from: 'categories',
+            localField: 'categoryId',
+            foreignField: '_id',
+            as: 'categoryId',
+          },
+        },
+        {
+          $unwind: {
+            path: '$categoryId',
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+
+        {
+          $project: {
+            variants: 0,
+          },
+        },
+      ],
+    );
   }
   async findByCollection(
     collectionSlug: string,
@@ -326,20 +505,166 @@ export class ProductService {
     current: number,
     pageSize: number,
   ) {
-    // Bước 1: Tìm _id của Collection dựa vào slug
     const collectionId =
       await this.collectionService.findIdBySlug(collectionSlug);
 
-    // Bước 2: Chạy Pipeline
-    return paginationAggregate(this.productModel, query, current, pageSize, [
-      // A. Lọc sản phẩm thuộc Collection này
+    const queryParams = new URLSearchParams(query);
+    console.log('Check query params:', queryParams.toString());
+    const size = queryParams.get('size');
+    const minPrice = queryParams.get('minPrice');
+    const maxPrice = queryParams.get('maxPrice');
+    const sort = queryParams.get('sort');
+    const brandSlug = queryParams.get('brand');
+
+    const productMatchStage: any = {
+      collectionId: new Types.ObjectId(collectionId),
+    };
+
+    if (brandSlug) {
+      const supplierId = await this.supplierService.findIdBySlug(brandSlug);
+      if (supplierId) {
+        productMatchStage.supplierId = new Types.ObjectId(supplierId);
+      }
+    }
+
+    const variantMatchStage: any = {};
+
+    if (minPrice || maxPrice) {
+      variantMatchStage['variants.currentPrice'] = {};
+      if (minPrice)
+        variantMatchStage['variants.currentPrice'].$gte = Number(minPrice);
+      if (maxPrice)
+        variantMatchStage['variants.currentPrice'].$lte = Number(maxPrice);
+    }
+
+    if (size) {
+      variantMatchStage['variants.attributes'] = {
+        $elemMatch: { k: 'Size', v: size },
+      };
+    }
+
+    let sortStage: any = { 'variants.currentPrice': 1 };
+    if (sort) {
+      if (sort === 'price-desc') sortStage = { 'variants.currentPrice': -1 };
+      else if (sort === 'price-asc') sortStage = { 'variants.currentPrice': 1 };
+    }
+
+    queryParams.delete('size');
+    queryParams.delete('minPrice');
+    queryParams.delete('maxPrice');
+    queryParams.delete('sort');
+    queryParams.delete('brand');
+
+    const cleanQuery = queryParams.toString();
+
+    return paginationAggregate(
+      this.productModel,
+      cleanQuery,
+      current,
+      pageSize,
+      [
+        {
+          $match: productMatchStage,
+        },
+
+        {
+          $lookup: {
+            from: 'variants',
+            localField: '_id',
+            foreignField: 'productId',
+            as: 'variants',
+          },
+        },
+
+        {
+          $unwind: {
+            path: '$variants',
+            preserveNullAndEmptyArrays: false,
+          },
+        },
+
+        ...(Object.keys(variantMatchStage).length > 0
+          ? [{ $match: variantMatchStage }]
+          : []),
+
+        {
+          $sort: sortStage,
+        },
+
+        {
+          $group: {
+            _id: '$_id',
+            doc: { $first: '$$ROOT' },
+            cheapestVariant: { $first: '$variants' },
+          },
+        },
+
+        {
+          $replaceRoot: {
+            newRoot: {
+              $mergeObjects: [
+                '$doc',
+                {
+                  originalPrice: '$cheapestVariant.originalPrice',
+                  discountPrice: '$cheapestVariant.discountPrice',
+                  currentPrice: '$cheapestVariant.currentPrice',
+                },
+              ],
+            },
+          },
+        },
+
+        {
+          $lookup: {
+            from: 'categories',
+            localField: 'categoryId',
+            foreignField: '_id',
+            as: 'categoryId',
+          },
+        },
+        {
+          $unwind: {
+            path: '$categoryId',
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+
+        {
+          $project: {
+            variants: 0,
+          },
+        },
+      ],
+    );
+  }
+  async findByProductSlug(slug: string) {
+    const product = await this.productModel
+      .findOne({ slug: slug })
+      .populate(['supplierId', { path: 'categoryId' }])
+      .lean();
+    if (!product) {
+      throw new BadRequestException('Can not find product');
+    }
+    const variants = await this.variantService.findByProduct(product._id);
+    if (!variants) {
+      throw new BadRequestException('Can not find data');
+    }
+    return {
+      ...product,
+      variants: variants || [],
+    };
+  }
+  async searchByKeyword(keyword: string) {
+    const regex = new RegExp(keyword, 'i');
+
+    return this.productModel.aggregate([
       {
         $match: {
-          collectionId: new Types.ObjectId(collectionId),
+          name: { $regex: regex },
+          status: 'ACTIVE',
         },
       },
 
-      // B. (GIỮ NGUYÊN) Join với Variants để lấy giá
       {
         $lookup: {
           from: 'variants',
@@ -349,78 +674,73 @@ export class ProductService {
         },
       },
       {
-        $unwind: {
-          path: '$variants',
-          preserveNullAndEmptyArrays: true,
+        $addFields: {
+          cheapestVariant: { $arrayElemAt: ['$variants', 0] },
         },
       },
-
-      // C. (GIỮ NGUYÊN) Sắp xếp để lấy biến thể giá rẻ nhất lên đầu nhóm
-      {
-        $sort: {
-          'variants.currentPrice': 1,
-        },
-      },
-
-      // D. (GIỮ NGUYÊN) Group lại thành 1 sản phẩm
-      {
-        $group: {
-          _id: '$_id',
-          doc: { $first: '$$ROOT' },
-          cheapestVariant: { $first: '$variants' },
-        },
-      },
-
-      // E. (GIỮ NGUYÊN) Làm phẳng dữ liệu và gán giá hiển thị
-      {
-        $replaceRoot: {
-          newRoot: {
-            $mergeObjects: [
-              '$doc',
-              {
-                originalPrice: '$cheapestVariant.originalPrice',
-                discountPrice: '$cheapestVariant.discountPrice',
-                currentPrice: '$cheapestVariant.currentPrice',
-              },
-            ],
-          },
-        },
-      },
-
-      // F. (QUAN TRỌNG) Vẫn Join với Category để hiển thị thẻ loại sản phẩm (Category Tag) ở Product Card
       {
         $lookup: {
-          from: 'categories',
-          localField: 'categoryId',
+          from: 'suppliers',
+          localField: 'supplierId',
           foreignField: '_id',
-          as: 'categoryId',
+          as: 'supplier',
         },
       },
-      {
-        $unwind: {
-          path: '$categoryId',
-          preserveNullAndEmptyArrays: true,
-        },
-      },
+      { $unwind: { path: '$supplier', preserveNullAndEmptyArrays: true } },
 
-      // G. Cleanup dữ liệu thừa
       {
         $project: {
-          variants: 0,
-          cheapestVariant: 0,
+          _id: 1,
+          name: 1,
+          slug: 1,
+          images: { $slice: ['$images', 1] },
+          price: '$cheapestVariant.currentPrice',
+          supplier: '$supplier.name',
         },
       },
     ]);
   }
-  async findByProductSlug(slug: string) {
-    const data = (await this.productModel.findOne({ slug: slug })).populate([
-      'supplierId',
-      { path: 'categoryId' },
+  async findTopViewed(limit: number = 10) {
+    return this.productModel.aggregate([
+      { $match: { status: 'ACTIVE' } },
+      { $sort: { views: -1 } },
+      { $limit: limit },
+
+      {
+        $lookup: {
+          from: 'variants',
+          localField: '_id',
+          foreignField: 'productId',
+          as: 'variants',
+        },
+      },
+      {
+        $addFields: {
+          cheapestVariant: { $arrayElemAt: ['$variants', 0] },
+        },
+      },
+      {
+        $lookup: {
+          from: 'suppliers',
+          localField: 'supplierId',
+          foreignField: '_id',
+          as: 'supplier',
+        },
+      },
+      { $unwind: { path: '$supplier', preserveNullAndEmptyArrays: true } },
+
+      {
+        $project: {
+          _id: 1,
+          name: 1,
+          slug: 1,
+          views: 1,
+          images: { $slice: ['$images', 1] },
+          price: '$cheapestVariant.currentPrice',
+          supplier: '$supplier.name',
+        },
+      },
     ]);
-    if (!data) {
-      throw new BadRequestException('Sản phẩm không hợp lệ');
-    }
-    return data;
   }
   async increaseProductView(slug: string): Promise<number> {
     return await this.productModel.findOneAndUpdate(

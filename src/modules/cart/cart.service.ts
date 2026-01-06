@@ -14,17 +14,22 @@ export class CartService {
     @InjectModel(Cart.name) private cartModel: Model<Cart>,
     @InjectModel(CartItem.name) private cartItemModel: Model<CartItem>,
   ) {}
-  async getCart(user: any) {
-    const { _id } = user;
+  async getCart(_id: string) {
     const cart = await this.cartModel
       .findOne({ userId: _id })
       .populate({
         path: 'items',
         model: 'CartItem',
-        populate: {
-          path: 'productId',
-          model: 'Product',
-        },
+        populate: [
+          {
+            path: 'productId',
+            model: 'Product',
+          },
+          {
+            path: 'variantId',
+            model: 'Variant',
+          },
+        ],
       })
       .exec();
     if (!cart) {
@@ -44,7 +49,13 @@ export class CartService {
         const dbProductId = dbItem.productId._id
           ? dbItem.productId._id.toString()
           : dbItem.productId.toString();
-        return dbProductId === inputItem.productId;
+        const dbVariantId = dbItem.variantId._id
+          ? dbItem.variantId._id.toString()
+          : dbItem.variantId.toString();
+        return (
+          dbProductId === inputItem.productId &&
+          dbVariantId === inputItem.variantId
+        );
       });
       if (existingItemIndex > -1) {
         const existingItem = cart.items[existingItemIndex] as CartItemDocument;
@@ -54,6 +65,7 @@ export class CartService {
       } else {
         const newCart = await this.cartItemModel.create({
           productId: inputItem.productId,
+          variantId: inputItem.variantId,
           quantity: inputItem.quantity,
         });
         newCartItemIds.push(newCart._id as any);
@@ -64,8 +76,7 @@ export class CartService {
       await cart.save();
     }
 
-    const user = { _id: userId };
-    return this.getCart(user);
+    return this.getCart(userId);
   }
   async removeCartItem(userId: string, deleteCartItemDto: DeleteCartItemDto) {
     const { cartItemId } = deleteCartItemDto;
@@ -83,8 +94,7 @@ export class CartService {
         'Cart not found for user(cart item is deleted)',
       );
     }
-    const user = { _id: userId };
-    return this.getCart(user);
+    return this.getCart(userId);
   }
   async removeCart(userId: string) {
     const cart = await this.cartModel.findOne({ userId });
@@ -106,7 +116,6 @@ export class CartService {
       );
     }
     await this.cartModel.findOneAndUpdate({ userId }, { items: [] });
-    const user = { _id: userId };
-    return this.getCart(user);
+    return this.getCart(userId);
   }
 }

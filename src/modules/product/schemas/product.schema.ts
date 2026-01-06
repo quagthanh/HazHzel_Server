@@ -1,8 +1,10 @@
 import { Variant } from '@/modules/variant/schemas/variant.schema';
 import { statusProduct } from '@/shared/enums/statusProduct.enum';
+import { GenderType } from '@/shared/enums/typeGenderProduct.enm';
 import { ProductImage } from '@/shared/interfaces/product-image';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { HydratedDocument, Types } from 'mongoose';
+import { ProductAttribute } from './product-atribute.schema';
 
 export type ProductDocument = HydratedDocument<Product>;
 
@@ -28,6 +30,9 @@ export class Product {
 
   @Prop({ type: [Object], default: [] })
   images: ProductImage[];
+
+  @Prop({ type: String, enum: GenderType, default: GenderType.UNISEX })
+  gender: GenderType;
 
   @Prop({
     type: String,

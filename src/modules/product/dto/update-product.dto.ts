@@ -1,5 +1,4 @@
-import { Variant } from '@/modules/variant/schemas/variant.schema';
-import { IsNotEmpty, IsOptional } from 'class-validator';
+import { IsOptional } from 'class-validator';
 import { Types } from 'mongoose';
 
 export class UpdateProductDto {

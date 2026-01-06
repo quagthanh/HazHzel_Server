@@ -1,20 +1,27 @@
+import { Transform, Type, plainToInstance } from 'class-transformer';
 import {
-  IsString,
+  IsArray,
   IsMongoId,
+  IsNotEmpty,
   IsNumber,
   IsOptional,
-  IsArray,
+  IsString,
   Min,
-  IsNotEmpty,
+  ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer';
 import { Types } from 'mongoose';
 
-export class CreateVariantDto {
-  @IsString()
+export class VariantAttributeDto {
   @IsNotEmpty()
-  name: string;
+  @IsString()
+  k: string;
 
+  @IsNotEmpty()
+  @IsString()
+  v: string;
+}
+
+export class CreateVariantDto {
   @IsMongoId()
   @IsNotEmpty()
   productId: Types.ObjectId;
@@ -42,14 +49,22 @@ export class CreateVariantDto {
   @IsOptional()
   promoCodePrice?: number;
 
-  @IsString()
-  @IsOptional()
-  color?: string;
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try {
+        const parsedObject = JSON.parse(value);
+        return plainToInstance(VariantAttributeDto, parsedObject);
+      } catch (error) {
+        return [];
+      }
+    }
 
-  @IsArray()
-  @IsString({ each: true })
-  @IsOptional()
-  options?: string[];
+    return plainToInstance(VariantAttributeDto, value);
+  })
+  @IsArray({ message: 'Attributes phải là một mảng' })
+  @ValidateNested({ each: true })
+  @Type(() => VariantAttributeDto)
+  attributes: VariantAttributeDto[];
 
   @Type(() => Number)
   @IsNumber()
